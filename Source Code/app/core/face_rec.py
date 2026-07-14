@@ -7,7 +7,7 @@ try:
     import numpy as np
     from sklearn.decomposition import PCA
     OPENCV_AVAILABLE = True
-except ImportError:
+except Exception:
     OPENCV_AVAILABLE = False
 
 # ==========================================

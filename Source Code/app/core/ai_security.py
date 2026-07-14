@@ -11,7 +11,7 @@ try:
     import numpy as np
     from sklearn.ensemble import RandomForestClassifier, IsolationForest
     SKLEARN_AVAILABLE = True
-except ImportError:
+except Exception:
     SKLEARN_AVAILABLE = False
     class MockNumpy:
         def array(self, obj, **kwargs):
