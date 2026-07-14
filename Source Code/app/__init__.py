@@ -3,7 +3,12 @@ from flask import Flask
 
 # Base directory is the workspace root (parent of parent of this file)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-REQUIRED_DIR = os.path.join(BASE_DIR, "Related or Required Files")
+
+# Redirect data folders to /tmp on Vercel serverless environment to bypass read-only filesystem locks
+if os.environ.get("VERCEL") == "1" or os.environ.get("NOW_REGION") is not None:
+    REQUIRED_DIR = "/tmp/AI_Locker"
+else:
+    REQUIRED_DIR = os.path.join(BASE_DIR, "Related or Required Files")
 
 SECURE_DIR = os.path.join(REQUIRED_DIR, "secure_vault")
 FACE_DATA_DIR = os.path.join(REQUIRED_DIR, "face_data")
