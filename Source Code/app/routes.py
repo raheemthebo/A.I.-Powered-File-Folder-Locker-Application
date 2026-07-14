@@ -1,7 +1,10 @@
 import os
 import time
 import json
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 from functools import wraps
 from flask import render_template, request, jsonify, Response, session, current_app, send_from_directory
 from .core.crypto import load_metadata, encrypt_item, decrypt_item
@@ -366,13 +369,16 @@ def unlock_item():
     else:
         # snap intruder photo and save if incorrect password
         photo_name = ""
-        if camera_manager.start_camera():
-            success_cam, frame = camera_manager.camera.read()
-            if success_cam:
-                frame = cv2.flip(frame, 1)
-                photo_name = f"intruder_pwd_{int(time.time())}.jpg"
-                photo_path = os.path.join(current_app.config['INTRUDERS_DIR'], photo_name)
-                cv2.imwrite(photo_path, frame)
+        if cv2 is not None and camera_manager.start_camera():
+            try:
+                success_cam, frame = camera_manager.camera.read()
+                if success_cam:
+                    frame = cv2.flip(frame, 1)
+                    photo_name = f"intruder_pwd_{int(time.time())}.jpg"
+                    photo_path = os.path.join(current_app.config['INTRUDERS_DIR'], photo_name)
+                    cv2.imwrite(photo_path, frame)
+            except Exception:
+                pass
             camera_manager.stop_camera()
 
         log_security_event(

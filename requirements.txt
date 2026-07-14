@@ -1,5 +1,2 @@
 Flask
 cryptography
-numpy
-scikit-learn
-opencv-python-headless
