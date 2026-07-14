@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Private local user data
+Related or Required Files/secure_vault/*
+Related or Required Files/face_data/*
+Related or Required Files/intruders/*
+Related or Required Files/security_log.txt
+Output File/*
+
+# Keep directory structures
+!Related or Required Files/secure_vault/.gitkeep
+!Related or Required Files/face_data/.gitkeep
+!Related or Required Files/intruders/.gitkeep
+!Output File/.gitkeep
+
+# System files
+.DS_Store
+Thumbs.db

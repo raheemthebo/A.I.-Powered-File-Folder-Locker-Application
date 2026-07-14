@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.I. Secure File & Folder Locker</title>
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <i class="fa-solid fa-shield-halved logo-icon"></i>
+                <div class="logo-text">
+                    <h1>A.I. Locker</h1>
+                    <span>Gexton Internship</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-tab="vault">
+                    <i class="fa-solid fa-vault"></i>
+                    <span>Secure Vault</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="lock">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Lock Files</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="biometrics">
+                    <i class="fa-solid fa-face-smile"></i>
+                    <span>Face Biometrics</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="security">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Security Log</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p>Mentor: Sir Muhammad Arham</p>
+                <div class="status-indicator-row">
+                    <div class="status-indicator">
+                        <span class="status-dot green"></span>
+                        <span class="status-label">Protected</span>
+                    </div>
+                    <button class="btn btn-logout-icon {% if not logged_in %}hidden{% endif %}" id="btn-logout" title="Lock Vault & Log Out">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard View -->
+        <main class="main-content">
+            <!-- Header bar -->
+            <header class="dashboard-header">
+                <div class="header-title">
+                    <h2 id="tab-title">Secure Vault Catalog</h2>
+                    <p id="tab-subtitle">Manage your encrypted files and folders securely</p>
+                </div>
+                <div class="user-profile">
+                    <div class="biometric-badge {% if biometrics_setup %}verified{% endif %}" id="global-bio-badge">
+                        <i class="fa-solid fa-face-viewfinder"></i>
+                        <span>{% if biometrics_setup %}Face ID Ready{% else %}Face ID Disabled{% endif %}</span>
+                    </div>
+                    <div class="auth-badge {% if auth_level == 'decoy' %}decoy{% else %}master{% endif %} {% if not logged_in %}hidden{% endif %}" id="global-auth-badge">
+                        <i class="fa-solid {% if auth_level == 'decoy' %}fa-mask{% else %}fa-user-gear{% endif %}"></i>
+                        <span>{% if auth_level == 'decoy' %}Decoy Mode{% else %}Master Mode{% endif %}</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tab Content Panel -->
+            <div class="content-body">
+                
+                <!-- 1. VAULT TAB -->
+                <section id="tab-vault" class="tab-pane active">
+                    <div class="vault-stats">
+                        <div class="stat-card">
+                            <i class="fa-solid fa-file-shield text-blue"></i>
+                            <div class="stat-info">
+                                <h3 id="stat-total-items">0</h3>
+                                <p>Total Locked Items</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fa-solid fa-folder-closed text-orange"></i>
+                            <div class="stat-info">
+                                <h3 id="stat-folders">0</h3>
+                                <p>Directories Locked</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fa-solid fa-circle-check text-green"></i>
+                            <div class="stat-info">
+                                <h3>100%</h3>
+                                <p>Encryption Strength</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card vault-list-card">
+                        <div class="card-header">
+                            <h3>Encrypted Catalog</h3>
+                            <button class="btn btn-secondary-icon" onclick="loadVault()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="vault-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Original Location</th>
+                                        <th>Locked Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vault-items-body">
+                                    <!-- Items loaded dynamically -->
+                                    <tr class="empty-row">
+                                        <td colspan="5">
+                                            <div class="empty-state">
+                                                <i class="fa-solid fa-box-open"></i>
+                                                <p>Your secure vault is empty. Lock files to get started.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. LOCK TAB -->
+                <section id="tab-lock" class="tab-pane">
+                    <div class="lock-grid">
+                        <div class="card lock-form-card">
+                            <h3>Lock New Item</h3>
+                            <p class="section-desc">Encrypt a file or folder using custom derived military-grade password encryption keys.</p>
+                            
+                            <div class="form-group">
+                                <label>Select Target</label>
+                                <div class="target-picker-group">
+                                    <button class="btn btn-secondary" id="btn-browse-file">
+                                        <i class="fa-solid fa-file"></i> Choose File
+                                    </button>
+                                    <button class="btn btn-secondary" id="btn-browse-folder">
+                                        <i class="fa-solid fa-folder-open"></i> Choose Folder
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="target-path">Selected Path</label>
+                                <input type="text" id="target-path" class="form-control text-muted" placeholder="No file or folder selected..." readonly>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="lock-password">Set Unlock Password</label>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="lock-password" class="form-control" placeholder="Create a secure password...">
+                                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('lock-password', this)">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="delete-original" checked>
+                                    <span class="checkmark"></span>
+                                    Remove original item after locking (Highly Recommended)
+                                </label>
+                            </div>
+
+                            <button class="btn btn-primary btn-block" id="btn-lock-submit" disabled>
+                                <i class="fa-solid fa-lock"></i> Secure & Lock Item
+                            </button>
+                        </div>
+
+                        <!-- AI Password Advisor -->
+                        <div class="card ai-advisor-card">
+                            <div class="advisor-header">
+                                <i class="fa-solid fa-brain brain-icon"></i>
+                                <div>
+                                    <h3>A.I. Password Advisor</h3>
+                                    <span>Real-time ML Strength Classifier</span>
+                                </div>
+                            </div>
+                            
+                            <div class="advisor-body">
+                                <div class="strength-meter-container">
+                                    <div class="meter-bar">
+                                        <div class="meter-fill" id="pwd-meter-fill" style="width: 0%;"></div>
+                                    </div>
+                                    <div class="meter-labels">
+                                        <span class="strength-val text-red" id="pwd-strength-label">Enter Password</span>
+                                        <span class="pct-val" id="pwd-pct-label">0%</span>
+                                    </div>
+                                </div>
+
+                                <div class="suggestions-box">
+                                    <h4>A.I. Recommendations:</h4>
+                                    <ul class="suggestions-list" id="pwd-suggestions">
+                                        <li>Type a password to start evaluation...</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. BIOMETRICS TAB -->
+                <section id="tab-biometrics" class="tab-pane">
+                    <div class="biometrics-grid">
+                        <div class="card camera-card">
+                            <h3>Face Registration Feed</h3>
+                            <p class="section-desc">Look directly into the camera to build your local AI face signature model.</p>
+                            
+                            <div class="camera-stream-wrapper">
+                                <img src="" id="camera-stream" alt="Webcam Feed Disabled" class="camera-stream">
+                                <div class="camera-overlay" id="camera-overlay">
+                                    <div class="scanner-line"></div>
+                                    <div class="overlay-text" id="camera-overlay-text">Camera Standby</div>
+                                </div>
+                            </div>
+
+                            <div class="camera-controls">
+                                <button class="btn btn-primary" id="btn-register-face">
+                                    <i class="fa-solid fa-camera"></i> Register Biometrics
+                                </button>
+                                <button class="btn btn-danger hidden" id="btn-cancel-cam">
+                                    <i class="fa-solid fa-circle-stop"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card info-card">
+                            <h3>Biometric Verification Settings</h3>
+                            <p class="section-desc">Biometrics add an additional cryptographic factor to your secure vault.</p>
+                            
+                            <div class="biometric-status-card">
+                                <div class="status-item">
+                                    <span class="label">Registration Status</span>
+                                    <span class="badge" id="bio-setup-status">Checking...</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="label">Classifier Base</span>
+                                    <span>sklearn PCA Eigenfaces</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="label">Sample Images Captured</span>
+                                    <span id="captured-samples-lbl">0 / 30</span>
+                                </div>
+                            </div>
+
+                            <div class="alert-box info">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <p><strong>How it works:</strong> Once your face is registered, unlocking any file will require you to stand in front of the camera for real-time verification. If an unrecognized person attempts access, the system snaps their photo and triggers an anomaly alert.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. SECURITY TAB -->
+                <section id="tab-security" class="tab-pane">
+                    <div class="logs-grid">
+                        <div class="card logs-list-card">
+                            <div class="card-header">
+                                <h3>Access Activity Monitor</h3>
+                                <button class="btn btn-secondary-icon" onclick="loadLogs()"><i class="fa-solid fa-rotate"></i> Refresh Logs</button>
+                            </div>
+                            <div class="logs-container">
+                                <div class="log-entries" id="log-entries-body">
+                                    <!-- Logs loaded dynamically -->
+                                    <p class="text-center text-muted">No security events logged yet.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card security-stats-card">
+                            <h3>A.I. Anomaly Dashboard</h3>
+                            <p class="section-desc">Real-time Isolation Forest evaluation of typing and access profiles.</p>
+                            
+                            <div class="security-stats-grid">
+                                <div class="sec-stat bg-red-opacity">
+                                    <h4 id="sec-total-anomalies">0</h4>
+                                    <span>Anomalies Flagged</span>
+                                </div>
+                                <div class="sec-stat bg-green-opacity">
+                                    <h4 id="sec-normal-logins">0</h4>
+                                    <span>Normal Logins</span>
+                                </div>
+                            </div>
+
+                            <div class="alert-box warning hidden" id="high-risk-alert">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <p><strong>CRITICAL ALERT:</strong> A high number of anomalous/unauthorized attempts have been logged. Intruder logs contain images of access bypass failures.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==========================================
+         MODALS & OVERLAYS
+         ========================================== -->
+
+    <!-- BIOMETRIC VERIFICATION MODAL -->
+    <div class="modal-backdrop" id="modal-bio-verify">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-shield text-blue"></i> Biometric Scan Required</h3>
+            </div>
+            <div class="modal-body">
+                <p>Establishing authorized face profile alignment...</p>
+                <div class="modal-camera-wrapper">
+                    <img src="" id="bio-verify-stream" alt="Webcam Loading..." class="modal-camera-stream">
+                    <div class="camera-overlay">
+                        <div class="scanner-line"></div>
+                        <div class="overlay-text" id="verify-overlay-lbl">Scanning Face</div>
+                    </div>
+                </div>
+                <div class="verify-progress-bar">
+                    <div class="verify-fill" id="verify-progress-fill" style="width: 0%;"></div>
+                </div>
+                <div class="verify-stats-text" id="verify-stats-lbl">
+                    Analyzing facial structures...
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeVerificationModal()">Bypass & Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASSWORD PROMPT MODAL -->
+    <div class="modal-backdrop" id="modal-pwd-prompt">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-key text-green"></i> Enter Unlock Password</h3>
+            </div>
+            <div class="modal-body">
+                <p id="unlock-item-label">Unlocking Item: test.txt</p>
+                <div class="form-group">
+                    <div class="password-input-wrapper">
+                        <input type="password" id="unlock-password" class="form-control" placeholder="Enter password to decrypt...">
+                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('unlock-password', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="alert-box warning hidden" id="unlock-error-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <p id="unlock-error-msg">Incorrect password.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
+                <button class="btn btn-primary" id="btn-unlock-confirm">Unlock & Restore</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTRUDER PHOTOGRAPH LIGHTBOX MODAL -->
+    <div class="modal-backdrop" id="modal-intruder-lightbox">
+        <div class="modal-content lightbox">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-circle-exclamation text-red"></i> Intruder Photograph</h3>
+                <button class="close-btn" onclick="closeIntruderLightbox()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="intruder-image-container">
+                    <img src="" id="intruder-lightbox-img" alt="Intruder snapshot">
+                </div>
+                <p id="intruder-lightbox-time" class="text-center text-muted mt-1">Snapshot taken: 2026-07-15 01:23:45</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECURITY LOCK SCREEN OVERLAY -->
+    <div class="lock-screen-backdrop {% if setup_needed or not logged_in %}active{% endif %}" id="lock-screen-container">
+        <!-- 1. Credentials Setup Container -->
+        <div class="lock-screen-card {% if not setup_needed %}hidden{% endif %}" id="setup-credentials-card">
+            <div class="lock-screen-header">
+                <i class="fa-solid fa-shield-halved logo-icon"></i>
+                <h2>Initialize AI Locker</h2>
+                <p>Configure your Master and Decoy passwords to initialize secure vault operations.</p>
+            </div>
+            
+            <div class="alert-box warning hidden" id="setup-error-alert">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p id="setup-error-msg">Passwords must be different.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="setup-master-password">Set Master Password</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="setup-master-password" class="form-control" placeholder="Primary unlock password...">
+                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('setup-master-password', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="setup-decoy-password">Set Decoy Password (Duress Mode)</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="setup-decoy-password" class="form-control" placeholder="Decoy/fake database password...">
+                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('setup-decoy-password', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btn-setup-submit">
+                <i class="fa-solid fa-circle-check"></i> Initialize Vault System
+            </button>
+        </div>
+
+        <!-- 2. Secure Login Container -->
+        <div class="lock-screen-card {% if setup_needed %}hidden{% endif %}" id="login-credentials-card">
+            <div class="lock-screen-header">
+                <i class="fa-solid fa-lock logo-icon"></i>
+                <h2>Unlock Secure Vault</h2>
+                <p>Vault is locked. Enter your authentication password to load vault index.</p>
+            </div>
+            
+            <div class="alert-box warning hidden" id="login-error-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <p id="login-error-msg">Incorrect password.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="login-password">Enter Password</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="login-password" class="form-control" placeholder="Enter vault password...">
+                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('login-password', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btn-login-submit">
+                <i class="fa-solid fa-unlock-keyhole"></i> Authenticate & Load
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Logic Script -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

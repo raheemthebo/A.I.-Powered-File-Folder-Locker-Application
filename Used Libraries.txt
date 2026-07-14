@@ -1,0 +1,36 @@
+======================================================================
+                  USED LIBRARIES AND DEPENDENCIES
+======================================================================
+
+1. cryptography
+   - Purpose: Secure Fernet symmetric file/folder encryption and 
+     PBKDF2HMAC (Password-Based Key Derivation Function 2) key derivation.
+
+2. opencv-python (cv2)
+   - Purpose: Real-time webcam connection, frame capture, and frontal 
+     face Haar Cascade bounding box tracking.
+
+3. scikit-learn (sklearn)
+   - Purpose: 
+     * PCA (Principal Component Analysis) + Euclidean distance 
+       threshold modeling for biometric face signature matching.
+     * RandomForestClassifier for A.I. password strength prediction.
+     * IsolationForest for access attempt anomaly logging.
+
+4. numpy
+   - Purpose: High-speed matrix flattening and vector calculations 
+     during PCA Eigenfaces projection.
+
+5. flask
+   - Purpose: Local web application daemon host serving REST APIs 
+     and MJPEG video feed streams.
+
+6. tkinter
+   - Purpose: Decoupled native OS directory and file explorer dialog popups.
+
+7. hashlib
+   - Purpose: SHA-256 secure password hashing with unique salt prefixes.
+
+8. os, sys, shutil, zipfile, uuid, time, math, webbrowser, threading
+   - Purpose: Python standard libraries for file zipping, background threads,
+     subprocesses, math entropy calculations, and system operations.
