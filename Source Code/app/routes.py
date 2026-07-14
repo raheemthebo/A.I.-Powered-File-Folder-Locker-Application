@@ -171,6 +171,8 @@ def browse_path():
             "from tkinter import filedialog; "
             "root = tk.Tk(); "
             "root.withdraw(); "
+            "root.lift(); "
+            "root.focus_force(); "
             "root.attributes('-topmost', True); "
             "path = filedialog.askdirectory(title='Select Folder to Lock') if sys.argv[1] == 'folder' "
             "else filedialog.askopenfilename(title='Select File to Lock'); "
