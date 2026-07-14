@@ -27,6 +27,15 @@ if __name__ == "__main__":
     print("      GEXTON A.I.-POWERED SECURE FILE AND FOLDER LOCKER      ")
     print("         Initializing Cryptographic & ML Modules...          ")
     print("=" * 60)
+
+    try:
+        from app.core.face_rec import OPENCV_AVAILABLE
+        from app.core.ai_security import SKLEARN_AVAILABLE
+        print(f"   [+] Face ID Biometrics: {'LOADED' if OPENCV_AVAILABLE else 'FALLBACK (OpenCV missing)'}")
+        print(f"   [+] AI Security Engine: {'LOADED' if SKLEARN_AVAILABLE else 'FALLBACK (sklearn missing)'}")
+        print("=" * 60)
+    except Exception:
+        pass
     
     # Spin up the browser launcher thread
     threading.Thread(target=open_browser, daemon=True).start()

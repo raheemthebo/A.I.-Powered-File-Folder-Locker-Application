@@ -66,7 +66,7 @@
                 <div class="user-profile">
                     <div class="biometric-badge {% if biometrics_setup %}verified{% endif %}" id="global-bio-badge">
                         <i class="fa-solid fa-face-viewfinder"></i>
-                        <span>{% if biometrics_setup %}Face ID Ready{% else %}Face ID Disabled{% endif %}</span>
+                        <span>{% if biometrics_setup %}Face ID Ready{% else %}Face ID Not Configured{% endif %}</span>
                     </div>
                     <div class="auth-badge {% if auth_level == 'decoy' %}decoy{% else %}master{% endif %} {% if not logged_in %}hidden{% endif %}" id="global-auth-badge">
                         <i class="fa-solid {% if auth_level == 'decoy' %}fa-mask{% else %}fa-user-gear{% endif %}"></i>
