@@ -22,6 +22,7 @@ class FaceRecognitionManager:
         self.verification_finished = False
         self.verification_success = False
         self.intruder_captured = False
+        self.camera_error = False
 
     def load_model(self):
         """Loads the pre-trained PCA face recognition model from disk."""
@@ -91,7 +92,9 @@ class FaceRecognitionManager:
             self.camera = cv2.VideoCapture(0)
             if not self.camera.isOpened():
                 self.camera = None
+                self.camera_error = True
                 return False
+        self.camera_error = False
         return True
 
     def stop_camera(self):
@@ -109,11 +112,14 @@ class FaceRecognitionManager:
         self.verification_finished = False
         self.verification_success = False
         self.intruder_captured = False
+        self.camera_error = False
 
     def generate_frames(self):
         """Generates video streaming frames annotated depending on mode."""
-        self.start_camera()
-        if self.camera is None:
+        success = self.start_camera()
+        if not success or self.camera is None:
+            self.camera_error = True
+            self.verification_finished = True
             # Yield empty frame or camera error placeholder
             yield b""
             return

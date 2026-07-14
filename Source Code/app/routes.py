@@ -431,7 +431,8 @@ def biometrics_status():
         "mode": camera_manager.mode,
         "register_count": camera_manager.register_count,
         "frames_checked": camera_manager.verification_frames_checked,
-        "success_count": camera_manager.verification_success_count
+        "success_count": camera_manager.verification_success_count,
+        "camera_error": camera_manager.camera_error
     })
 
 @current_app.route('/api/biometrics/reset', methods=['POST'])

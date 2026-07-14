@@ -11,9 +11,12 @@ INTRUDERS_DIR = os.path.join(REQUIRED_DIR, "intruders")
 LOG_PATH = os.path.join(REQUIRED_DIR, "security_log.txt")
 
 # Create required directories
-os.makedirs(SECURE_DIR, exist_ok=True)
-os.makedirs(FACE_DATA_DIR, exist_ok=True)
-os.makedirs(INTRUDERS_DIR, exist_ok=True)
+try:
+    os.makedirs(SECURE_DIR, exist_ok=True)
+    os.makedirs(FACE_DATA_DIR, exist_ok=True)
+    os.makedirs(INTRUDERS_DIR, exist_ok=True)
+except Exception:
+    pass
 
 def create_app():
     app = Flask(__name__, static_folder="static", template_folder="templates")

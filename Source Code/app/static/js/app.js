@@ -339,11 +339,18 @@ function openBiometricVerification() {
     // Set video feed sources
     stream.src = "/video_feed?mode=verify";
     
-    // Start status polling
     biometricPollInterval = setInterval(() => {
         fetch('/api/biometrics/status')
             .then(res => res.json())
             .then(status => {
+                if (status.camera_error) {
+                    clearInterval(biometricPollInterval);
+                    closeVerificationModal();
+                    alert("Webcam connection failed. Falling back directly to password validation.");
+                    openPasswordUnlock();
+                    return;
+                }
+                
                 // Update checking parameters
                 const progress = (status.frames_checked / 40) * 100;
                 fill.style.width = `${progress}%`;
@@ -466,11 +473,17 @@ function initBiometricRegistration() {
         // Start streaming video feed with registration argument
         stream.src = "/video_feed?mode=register";
         
-        // Monitor registration progress
         biometricPollInterval = setInterval(() => {
             fetch('/api/biometrics/status')
                 .then(res => res.json())
                 .then(status => {
+                    if (status.camera_error) {
+                        clearInterval(biometricPollInterval);
+                        stopBiometricCamera();
+                        alert("Camera Error: Could not connect to webcam. Biometric face registration aborted.");
+                        return;
+                    }
+                    
                     overlayText.innerText = `Align Face - Captured ${status.register_count}/30`;
                     samplesLbl.innerText = `${status.register_count} / 30`;
                     
