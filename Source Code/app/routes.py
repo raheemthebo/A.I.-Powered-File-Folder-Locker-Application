@@ -16,6 +16,9 @@ from .core.face_rec import camera_manager
 # ==========================================
 
 def get_config_path():
+    if os.environ.get("VERCEL") == "1" or os.environ.get("NOW_REGION") is not None:
+        os.makedirs("/tmp/AI_Locker", exist_ok=True)
+        return "/tmp/AI_Locker/vault_config.json"
     return os.path.join(current_app.config['BASE_DIR'], "Related or Required Files", "vault_config.json")
 
 def load_vault_config():
