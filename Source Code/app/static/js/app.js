@@ -708,6 +708,7 @@ function initAuth() {
 
     // State variables
     let currentEmail = "";
+    let isSignUpMode = false;
 
     // Show single card helper
     function showCard(activeCard) {
@@ -716,6 +717,37 @@ function initAuth() {
         });
         if (activeCard) activeCard.classList.remove('hidden');
     }
+
+    // Toggle Sign-In vs Sign-Up modes dynamically
+    function bindToggleAuthMode() {
+        const toggleLink = document.getElementById('link-toggle-auth-mode');
+        const toggleParagraph = document.getElementById('auth-mode-toggle-paragraph');
+        const authTitle = document.getElementById('auth-email-title');
+        const authSubtitle = document.getElementById('auth-email-subtitle');
+        const authLabel = document.getElementById('lbl-auth-email');
+
+        if (toggleLink) {
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                isSignUpMode = !isSignUpMode;
+                
+                if (isSignUpMode) {
+                    authTitle.innerText = "Create Account";
+                    authSubtitle.innerText = "Register your email address to initialize your secure vault.";
+                    authLabel.innerText = "Register email address";
+                    toggleParagraph.innerHTML = 'Already have an account? <a href="#" id="link-toggle-auth-mode" style="color: var(--neon-blue); text-decoration: none;">Sign In</a>';
+                } else {
+                    authTitle.innerText = "Sign in to AI Locker";
+                    authSubtitle.innerText = "Enter your email address to initialize or load your secure vault.";
+                    authLabel.innerText = "Username or email address";
+                    toggleParagraph.innerHTML = 'Don\'t have an account? <a href="#" id="link-toggle-auth-mode" style="color: var(--neon-blue); text-decoration: none;">Create Account</a>';
+                }
+                
+                bindToggleAuthMode();
+            });
+        }
+    }
+    bindToggleAuthMode();
 
     // Go back to Email screen
     const backFromPwd = document.getElementById('btn-back-to-email-from-pwd');
@@ -751,7 +783,7 @@ function initAuth() {
             fetch('/api/auth/check_email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ email, is_signup: isSignUpMode })
             })
             .then(res => res.json())
             .then(data => {

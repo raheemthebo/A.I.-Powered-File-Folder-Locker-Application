@@ -177,14 +177,18 @@ def check_email():
     config = load_vault_config()
     data = request.get_json() or {}
     email = data.get("email", "").lower().strip()
+    is_signup = data.get("is_signup", False)
     
     if not email or "@" not in email:
         return jsonify({"success": False, "message": "Please enter a valid email address."}), 400
         
     registered = "users" in config and email in config["users"]
     
-    if not registered:
-        # Generate random 6-digit OTP
+    if is_signup:
+        if registered:
+            return jsonify({"success": False, "message": "This email address is already registered. Please sign in instead."}), 400
+            
+        # Generate random 6-digit OTP for signup
         otp_code = str(random.randint(100000, 999999))
         session['otp_code'] = otp_code
         session['otp_email'] = email
@@ -201,8 +205,11 @@ def check_email():
             "otp_code": otp_code,
             "email_sent": sent
         })
-        
-    return jsonify({"success": True, "registered": True})
+    else:
+        if not registered:
+            return jsonify({"success": False, "message": "This email address is not registered. Click 'Create Account' below to sign up."}), 400
+            
+        return jsonify({"success": True, "registered": True})
 
 @current_app.route('/api/auth/verify_otp', methods=['POST'])
 def verify_otp():

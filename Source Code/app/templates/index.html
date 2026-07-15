@@ -391,8 +391,8 @@
         <div class="lock-screen-card" id="auth-email-card">
             <div class="lock-screen-header">
                 <i class="fa-solid fa-shield-halved logo-icon"></i>
-                <h2>Sign in to AI Locker</h2>
-                <p>Enter your email address to initialize or load your secure vault.</p>
+                <h2 id="auth-email-title">Sign in to AI Locker</h2>
+                <p id="auth-email-subtitle">Enter your email address to initialize or load your secure vault.</p>
             </div>
             
             <div class="alert-box warning hidden" id="email-error-alert">
@@ -401,7 +401,7 @@
             </div>
 
             <div class="form-group">
-                <label for="auth-email">Username or email address</label>
+                <label for="auth-email" id="lbl-auth-email">Username or email address</label>
                 <input type="email" id="auth-email" class="form-control" placeholder="Enter your email...">
             </div>
 
@@ -419,6 +419,10 @@
                 <i class="fa-brands fa-apple" style="color: var(--text-primary);"></i>
                 Continue with Apple
             </button>
+
+            <p class="auth-toggle-link text-center mt-3 text-sm" id="auth-mode-toggle-paragraph">
+                Don't have an account? <a href="#" id="link-toggle-auth-mode" style="color: var(--neon-blue); text-decoration: none;">Create Account</a>
+            </p>
         </div>
 
         <!-- 2. Step 2: Password Login Card (for existing users) -->
