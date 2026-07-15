@@ -387,22 +387,109 @@
 
     <!-- SECURITY LOCK SCREEN OVERLAY -->
     <div class="lock-screen-backdrop {% if setup_needed or not logged_in %}active{% endif %}" id="lock-screen-container">
-        <!-- 1. Credentials Setup Container -->
-        <div class="lock-screen-card {% if not setup_needed %}hidden{% endif %}" id="setup-credentials-card">
+        <!-- 1. Step 1: Email Entry Card -->
+        <div class="lock-screen-card" id="auth-email-card">
             <div class="lock-screen-header">
                 <i class="fa-solid fa-shield-halved logo-icon"></i>
+                <h2>Sign in to AI Locker</h2>
+                <p>Enter your email address to initialize or load your secure vault.</p>
+            </div>
+            
+            <div class="alert-box warning hidden" id="email-error-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <p id="email-error-msg">Please enter a valid email address.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="auth-email">Username or email address</label>
+                <input type="email" id="auth-email" class="form-control" placeholder="Enter your email...">
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btn-auth-email-next">
+                Next <i class="fa-solid fa-arrow-right"></i>
+            </button>
+
+            <div class="auth-divider">or</div>
+
+            <button class="btn-oauth" type="button" onclick="triggerGoogleAuth()">
+                <img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" alt="Google logo">
+                Continue with Google
+            </button>
+            <button class="btn-oauth" type="button" onclick="triggerAppleAuth()">
+                <i class="fa-brands fa-apple" style="color: var(--text-primary);"></i>
+                Continue with Apple
+            </button>
+        </div>
+
+        <!-- 2. Step 2: Password Login Card (for existing users) -->
+        <div class="lock-screen-card hidden" id="auth-password-card">
+            <div class="lock-screen-header">
+                <a href="#" class="auth-back-link" id="btn-back-to-email-from-pwd" style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); text-decoration: none; font-size: 13px; margin-bottom: 15px;"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <i class="fa-solid fa-lock logo-icon"></i>
+                <h2>Unlock Secure Vault</h2>
+                <p>Enter the password associated with <strong id="lbl-password-email"></strong></p>
+            </div>
+            
+            <div class="alert-box warning hidden" id="password-error-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <p id="password-error-msg">Incorrect password.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="auth-password">Enter Password</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="auth-password" class="form-control" placeholder="Enter vault password...">
+                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('auth-password', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btn-auth-password-submit">
+                <i class="fa-solid fa-unlock-keyhole"></i> Authenticate & Load
+            </button>
+        </div>
+
+        <!-- 3. Step 3: OTP Verification Card (for new users) -->
+        <div class="lock-screen-card hidden" id="auth-otp-card">
+            <div class="lock-screen-header">
+                <a href="#" class="auth-back-link" id="btn-back-to-email-from-otp" style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); text-decoration: none; font-size: 13px; margin-bottom: 15px;"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <i class="fa-solid fa-envelope-open-text logo-icon" style="color: var(--neon-blue);"></i>
+                <h2>Verify Your Email</h2>
+                <p>We've sent a 6-digit OTP verification code to <strong id="lbl-otp-email"></strong>.</p>
+            </div>
+            
+            <div class="alert-box warning hidden" id="otp-error-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <p id="otp-error-msg">Incorrect verification code.</p>
+            </div>
+
+            <div class="alert-box warning" id="otp-demo-info" style="border-color: rgba(0, 210, 255, 0.2); background: rgba(0, 210, 255, 0.04); color: var(--neon-blue); margin-bottom: 20px;">
+                <i class="fa-solid fa-circle-info"></i>
+                <p>Demo Mode: Check security logs or enter code <strong id="demo-otp-code">123456</strong> to verify instantly.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="auth-otp-code">Enter 6-Digit OTP Code</label>
+                <input type="text" id="auth-otp-code" class="form-control" placeholder="Enter verification code..." maxlength="6" style="text-align: center; font-size: 18px; font-weight: 700; letter-spacing: 5px;">
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btn-auth-otp-submit">
+                <i class="fa-solid fa-envelope-circle-check"></i> Verify Email OTP
+            </button>
+        </div>
+
+        <!-- 4. Step 4: Create Passwords Card (for verified new users) -->
+        <div class="lock-screen-card hidden" id="auth-setup-card">
+            <div class="lock-screen-header">
+                <i class="fa-solid fa-shield-halved logo-icon" style="color: var(--neon-green);"></i>
                 <h2>Initialize AI Locker</h2>
-                <p>Register your email and passwords to secure vault operations.</p>
+                <p>Register security passwords for <strong id="lbl-setup-email"></strong> to initialize your secure vault.</p>
             </div>
             
             <div class="alert-box warning hidden" id="setup-error-alert">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <p id="setup-error-msg">Passwords must be different.</p>
-            </div>
-
-            <div class="form-group">
-                <label for="setup-email">Email Address</label>
-                <input type="email" id="setup-email" class="form-control" placeholder="Enter your email address...">
             </div>
 
             <div class="form-group">
@@ -425,68 +512,9 @@
                 </div>
             </div>
 
-            <button class="btn btn-primary btn-block" id="btn-setup-submit">
+            <button class="btn btn-primary btn-block" id="btn-auth-setup-submit">
                 <i class="fa-solid fa-circle-check"></i> Register & Initialize
             </button>
-
-            <div class="auth-divider">or</div>
-
-            <button class="btn-oauth" type="button" onclick="triggerGoogleAuth()">
-                <img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" alt="Google logo">
-                Continue with Google
-            </button>
-            <button class="btn-oauth" type="button" onclick="triggerAppleAuth()">
-                <i class="fa-brands fa-apple" style="color: var(--text-primary);"></i>
-                Continue with Apple
-            </button>
-
-            <p class="auth-toggle-link text-center mt-3 text-sm">Already have an account? <a href="#" id="link-to-login" style="color: var(--neon-blue); text-decoration: none;">Log In</a></p>
-        </div>
-
-        <!-- 2. Secure Login Container -->
-        <div class="lock-screen-card {% if setup_needed %}hidden{% endif %}" id="login-credentials-card">
-            <div class="lock-screen-header">
-                <i class="fa-solid fa-lock logo-icon"></i>
-                <h2>Unlock Secure Vault</h2>
-                <p>Vault is locked. Enter your credentials to unlock and load your vault catalog.</p>
-            </div>
-            
-            <div class="alert-box warning hidden" id="login-error-alert">
-                <i class="fa-solid fa-circle-exclamation"></i>
-                <p id="login-error-msg">Incorrect password.</p>
-            </div>
-
-            <div class="form-group">
-                <label for="login-email">Email Address</label>
-                <input type="email" id="login-email" class="form-control" placeholder="Enter your email...">
-            </div>
-
-            <div class="form-group">
-                <label for="login-password">Enter Password</label>
-                <div class="password-input-wrapper">
-                    <input type="password" id="login-password" class="form-control" placeholder="Enter vault password...">
-                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('login-password', this)">
-                        <i class="fa-solid fa-eye"></i>
-                    </button>
-                </div>
-            </div>
-
-            <button class="btn btn-primary btn-block" id="btn-login-submit">
-                <i class="fa-solid fa-unlock-keyhole"></i> Authenticate & Load
-            </button>
-
-            <div class="auth-divider">or</div>
-
-            <button class="btn-oauth" type="button" onclick="triggerGoogleAuth()">
-                <img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" alt="Google logo">
-                Continue with Google
-            </button>
-            <button class="btn-oauth" type="button" onclick="triggerAppleAuth()">
-                <i class="fa-brands fa-apple" style="color: var(--text-primary);"></i>
-                Continue with Apple
-            </button>
-
-            <p class="auth-toggle-link text-center mt-3 text-sm">Don't have an account? <a href="#" id="link-to-setup" style="color: var(--neon-blue); text-decoration: none;">Create Account</a></p>
         </div>
     </div>
 

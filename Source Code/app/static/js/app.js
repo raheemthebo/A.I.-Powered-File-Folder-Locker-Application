@@ -691,101 +691,129 @@ function togglePasswordVisibility(inputId, btn) {
 // 8. SECURITY MASTER & DECOY VAULT AUTHENTICATION
 // ==========================================
 function initAuth() {
-    const setupCard = document.getElementById('setup-credentials-card');
-    const loginCard = document.getElementById('login-credentials-card');
     const lockScreen = document.getElementById('lock-screen-container');
     
-    // Switcher triggers
-    const toLogin = document.getElementById('link-to-login');
-    const toSetup = document.getElementById('link-to-setup');
-    if (toLogin) {
-        toLogin.addEventListener('click', (e) => {
+    // Cards
+    const emailCard = document.getElementById('auth-email-card');
+    const passwordCard = document.getElementById('auth-password-card');
+    const otpCard = document.getElementById('auth-otp-card');
+    const setupCard = document.getElementById('auth-setup-card');
+
+    // Inputs
+    const emailInput = document.getElementById('auth-email');
+    const passwordInput = document.getElementById('auth-password');
+    const otpInput = document.getElementById('auth-otp-code');
+    const masterInput = document.getElementById('setup-master-password');
+    const decoyInput = document.getElementById('setup-decoy-password');
+
+    // State variables
+    let currentEmail = "";
+
+    // Show single card helper
+    function showCard(activeCard) {
+        [emailCard, passwordCard, otpCard, setupCard].forEach(card => {
+            if (card) card.classList.add('hidden');
+        });
+        if (activeCard) activeCard.classList.remove('hidden');
+    }
+
+    // Go back to Email screen
+    const backFromPwd = document.getElementById('btn-back-to-email-from-pwd');
+    if (backFromPwd) {
+        backFromPwd.addEventListener('click', (e) => {
             e.preventDefault();
-            setupCard.classList.add('hidden');
-            loginCard.classList.remove('hidden');
+            showCard(emailCard);
         });
     }
-    if (toSetup) {
-        toSetup.addEventListener('click', (e) => {
+    const backFromOtp = document.getElementById('btn-back-to-email-from-otp');
+    if (backFromOtp) {
+        backFromOtp.addEventListener('click', (e) => {
             e.preventDefault();
-            loginCard.classList.add('hidden');
-            setupCard.classList.remove('hidden');
+            showCard(emailCard);
         });
     }
 
-    // Setup Submit
-    const btnSetup = document.getElementById('btn-setup-submit');
-    if (btnSetup) {
-        btnSetup.addEventListener('click', () => {
-            const email = document.getElementById('setup-email').value;
-            const master = document.getElementById('setup-master-password').value;
-            const decoy = document.getElementById('setup-decoy-password').value;
-            const alertBox = document.getElementById('setup-error-alert');
-            const alertMsg = document.getElementById('setup-error-msg');
+    // Step 1: Email Address Verification Click
+    const btnEmailNext = document.getElementById('btn-auth-email-next');
+    if (btnEmailNext) {
+        btnEmailNext.addEventListener('click', () => {
+            const email = emailInput.value.trim();
+            const alertBox = document.getElementById('email-error-alert');
+            const alertMsg = document.getElementById('email-error-msg');
             
-            if (!email || !master || !decoy) {
-                alertMsg.innerText = "Email and passwords cannot be empty.";
+            if (!email || !email.includes('@')) {
+                alertMsg.innerText = "Please enter a valid email address.";
                 alertBox.classList.remove('hidden');
                 return;
             }
-            if (master === decoy) {
-                alertMsg.innerText = "Master and Decoy passwords must be different.";
-                alertBox.classList.remove('hidden');
-                return;
-            }
+            alertBox.classList.add('hidden');
             
-            fetch('/api/setup', {
+            fetch('/api/auth/check_email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, master_password: master, decoy_password: decoy })
+                body: JSON.stringify({ email })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    setupCard.classList.add('hidden');
-                    loginCard.classList.remove('hidden');
-                    alert("Account registered successfully! Please log in to continue.");
+                    currentEmail = email;
+                    if (data.registered) {
+                        // User exists: transition to Password view
+                        document.getElementById('lbl-password-email').innerText = email;
+                        passwordInput.value = "";
+                        showCard(passwordCard);
+                    } else {
+                        // User is new: transition to OTP verification view
+                        document.getElementById('lbl-otp-email').innerText = email;
+                        otpInput.value = "";
+                        
+                        // Show OTP code in demo banner if returned
+                        if (data.otp_code) {
+                            document.getElementById('demo-otp-code').innerText = data.otp_code;
+                        }
+                        showCard(otpCard);
+                    }
                 } else {
                     alertMsg.innerText = data.message;
                     alertBox.classList.remove('hidden');
                 }
             })
             .catch(err => {
-                console.error("Setup error:", err);
+                console.error("Check email error:", err);
                 alert("Failed to connect to backend server.");
             });
         });
     }
 
-    // Login Submit
-    const btnLogin = document.getElementById('btn-login-submit');
-    if (btnLogin) {
-        btnLogin.addEventListener('click', () => {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const alertBox = document.getElementById('login-error-alert');
-            const alertMsg = document.getElementById('login-error-msg');
+    // Step 2: Password Login Submit
+    const btnPwdSubmit = document.getElementById('btn-auth-password-submit');
+    if (btnPwdSubmit) {
+        btnPwdSubmit.addEventListener('click', () => {
+            const password = passwordInput.value;
+            const alertBox = document.getElementById('password-error-alert');
+            const alertMsg = document.getElementById('password-error-msg');
             
-            if (!email || !password) {
-                alertMsg.innerText = "Email and password cannot be empty.";
+            if (!password) {
+                alertMsg.innerText = "Password cannot be empty.";
                 alertBox.classList.remove('hidden');
                 return;
             }
+            alertBox.classList.add('hidden');
             
             fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email: currentEmail, password })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     if (data.face_required) {
-                        // Hide login card, open face verification overlay
-                        loginCard.classList.add('hidden');
+                        showCard(emailCard); // Hide modal overlay internally
+                        lockScreen.classList.add('active'); // Keep screen container backdrop active
+                        // Open biometric Verification popup
                         openBiometricVerificationForLogin(data.auth_level);
                     } else {
-                        // Login immediately
                         handleSuccessfulLogin(data);
                     }
                 } else {
@@ -800,7 +828,91 @@ function initAuth() {
         });
     }
 
-    // Helper to complete login after credentials/biometrics clear
+    // Step 3: OTP Code verification
+    const btnOtpSubmit = document.getElementById('btn-auth-otp-submit');
+    if (btnOtpSubmit) {
+        btnOtpSubmit.addEventListener('click', () => {
+            const otp = otpInput.value.trim();
+            const alertBox = document.getElementById('otp-error-alert');
+            const alertMsg = document.getElementById('otp-error-msg');
+            
+            if (!otp || otp.length < 6) {
+                alertMsg.innerText = "Please enter a 6-digit verification code.";
+                alertBox.classList.remove('hidden');
+                return;
+            }
+            alertBox.classList.add('hidden');
+            
+            fetch('/api/auth/verify_otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: currentEmail, otp })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // OTP Verified! Show password creation view
+                    document.getElementById('lbl-setup-email').innerText = currentEmail;
+                    masterInput.value = "";
+                    decoyInput.value = "";
+                    showCard(setupCard);
+                } else {
+                    alertMsg.innerText = data.message;
+                    alertBox.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                console.error("Verify OTP error:", err);
+                alert("Failed to verify code.");
+            });
+        });
+    }
+
+    // Step 4: Register & Setup Submit
+    const btnSetupSubmit = document.getElementById('btn-auth-setup-submit');
+    if (btnSetupSubmit) {
+        btnSetupSubmit.addEventListener('click', () => {
+            const master = masterInput.value;
+            const decoy = decoyInput.value;
+            const alertBox = document.getElementById('setup-error-alert');
+            const alertMsg = document.getElementById('setup-error-msg');
+            
+            if (!master || !decoy) {
+                alertMsg.innerText = "Master and Decoy passwords cannot be empty.";
+                alertBox.classList.remove('hidden');
+                return;
+            }
+            if (master === decoy) {
+                alertMsg.innerText = "Master and Decoy passwords must be different.";
+                alertBox.classList.remove('hidden');
+                return;
+            }
+            alertBox.classList.add('hidden');
+            
+            fetch('/api/setup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: currentEmail, master_password: master, decoy_password: decoy })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Account registered and initialized successfully!");
+                    // Log in automatically
+                    handleSuccessfulLogin({ success: true, auth_level: 'master' });
+                } else {
+                    alertMsg.innerText = data.message;
+                    alertBox.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                console.error("Setup error:", err);
+                alert("Failed to initialize account.");
+            });
+        });
+    }
+
+    // Helper to complete login after auth checks clear
     function handleSuccessfulLogin(data) {
         lockScreen.classList.remove('active');
         
@@ -826,8 +938,14 @@ function initAuth() {
         }
         
         // Clean fields
-        document.getElementById('login-password').value = "";
-        document.getElementById('login-email').value = "";
+        emailInput.value = "";
+        passwordInput.value = "";
+        otpInput.value = "";
+        masterInput.value = "";
+        decoyInput.value = "";
+        
+        // Return view state to Step 1
+        showCard(emailCard);
         
         // Load data
         loadVault();
@@ -878,7 +996,7 @@ function initAuth() {
                         } else {
                             alert("Face recognition failed to verify user identity. Access denied.");
                             fetch('/api/logout', { method: 'POST' }).then(() => {
-                                loginCard.classList.remove('hidden');
+                                showCard(emailCard);
                             });
                         }
                     }
@@ -900,8 +1018,7 @@ function initAuth() {
                 if (data.success) {
                     // Show login overlay
                     lockScreen.classList.add('active');
-                    loginCard.classList.remove('hidden');
-                    setupCard.classList.add('hidden');
+                    showCard(emailCard);
                     
                     // Hide header elements
                     document.getElementById('global-auth-badge').classList.add('hidden');

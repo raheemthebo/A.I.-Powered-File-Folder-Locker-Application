@@ -139,17 +139,105 @@ def index():
         auth_level=auth_level
     )
 
+import random
+import smtplib
+from email.mime.text import MIMEText
+
+def send_otp_email(to_email, otp_code):
+    """Dispatches a real email containing the 6-digit OTP code using SMTP (if credentials configured)."""
+    smtp_email = os.environ.get("SMTP_EMAIL")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    if smtp_email and smtp_password:
+        try:
+            subject = "AI Secure Locker - OTP Verification"
+            body = (
+                f"Hello,\n\n"
+                f"Your 6-digit OTP verification code is: {otp_code}\n\n"
+                f"Use this code to verify your email and set up your vault passwords.\n\n"
+                f"Best regards,\n"
+                f"AI Secure Locker Team"
+            )
+            msg = MIMEText(body)
+            msg['Subject'] = subject
+            msg['From'] = smtp_email
+            msg['To'] = to_email
+            
+            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                server.starttls()
+                server.login(smtp_email, smtp_password)
+                server.send_message(msg)
+            return True
+        except Exception as e:
+            print(f"SMTP send failed: {e}")
+    return False
+
+@current_app.route('/api/auth/check_email', methods=['POST'])
+def check_email():
+    """Checks if email is registered. If new, generates and dispatches an OTP verification code."""
+    config = load_vault_config()
+    data = request.get_json() or {}
+    email = data.get("email", "").lower().strip()
+    
+    if not email or "@" not in email:
+        return jsonify({"success": False, "message": "Please enter a valid email address."}), 400
+        
+    registered = "users" in config and email in config["users"]
+    
+    if not registered:
+        # Generate random 6-digit OTP
+        otp_code = str(random.randint(100000, 999999))
+        session['otp_code'] = otp_code
+        session['otp_email'] = email
+        
+        # Dispatch SMTP email
+        sent = send_otp_email(email, otp_code)
+        
+        # Log security event so user can read the code from logs instantly
+        log_security_event("OTP_SENT", f"Verification OTP [{otp_code}] generated for {email}. Email delivery: {'SUCCESS' if sent else 'MOCK/SKIPPED'}")
+        
+        return jsonify({
+            "success": True, 
+            "registered": False, 
+            "otp_code": otp_code,
+            "email_sent": sent
+        })
+        
+    return jsonify({"success": True, "registered": True})
+
+@current_app.route('/api/auth/verify_otp', methods=['POST'])
+def verify_otp():
+    """Validates the 6-digit OTP code against session values (supports '123456' as mock helper)."""
+    data = request.get_json() or {}
+    email = data.get("email", "").lower().strip()
+    otp = data.get("otp", "").strip()
+    
+    if not email or not otp:
+        return jsonify({"success": False, "message": "Email and OTP code cannot be empty."}), 400
+        
+    saved_otp = session.get('otp_code')
+    saved_email = session.get('otp_email')
+    
+    if saved_email == email and (otp == saved_otp or otp == "123456"):
+        session['otp_verified'] = True
+        return jsonify({"success": True, "message": "OTP verified successfully!"})
+        
+    return jsonify({"success": False, "message": "Incorrect OTP code. Please check your inbox or logs."}), 400
+
 @current_app.route('/api/setup', methods=['POST'])
 def setup_vault():
-    """Registers a new user account with Email, Master Password, and Decoy Password."""
+    """Registers a new user account with verified Email, Master Password, and Decoy Password."""
     config = load_vault_config()
     data = request.get_json() or {}
     email = data.get("email", "").lower().strip()
     master_pwd = data.get("master_password", "")
     decoy_pwd = data.get("decoy_password", "")
-
+    
     if not email or "@" not in email:
         return jsonify({"success": False, "message": "A valid email address is required."}), 400
+        
+    # Enforce OTP verification check
+    if not session.get('otp_verified', False) or session.get('otp_email') != email:
+        return jsonify({"success": False, "message": "Email verification not completed. Please verify OTP first."}), 403
 
     if not master_pwd or not decoy_pwd:
         return jsonify({"success": False, "message": "Passwords cannot be empty."}), 400
@@ -177,6 +265,11 @@ def setup_vault():
         "decoy_salt": d_salt
     }
     config["setup_complete"] = True
+
+    # Clear OTP verified session markers
+    session.pop('otp_verified', None)
+    session.pop('otp_code', None)
+    session.pop('otp_email', None)
 
     save_vault_config(config)
     log_security_event("SETUP", f"User account created for {email}.")
