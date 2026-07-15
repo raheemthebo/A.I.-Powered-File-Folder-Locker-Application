@@ -1283,3 +1283,141 @@ body {
     line-height: 1.5;
 }
 
+/* ==========================================
+   RESPONSIVE DESIGN (Android, iOS, Tablets, PCs)
+   ========================================== */
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+    }
+    
+    .app-container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    /* Convert sidebar to bottom navigation bar */
+    .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        height: 65px;
+        flex-direction: row;
+        padding: 0 10px;
+        border-right: none;
+        border-top: 1px solid var(--glass-border);
+        justify-content: space-around;
+        align-items: center;
+        z-index: 999;
+        background: rgba(15, 16, 26, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .logo-area {
+        display: none !important;
+    }
+    
+    .nav-menu {
+        flex-direction: row !important;
+        gap: 5px !important;
+        width: 100%;
+        height: 100%;
+        justify-content: space-around;
+        align-items: center;
+        flex: 1;
+    }
+    
+    .nav-item {
+        flex-direction: column;
+        gap: 2px !important;
+        padding: 6px 4px !important;
+        border-radius: 8px !important;
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+        background: transparent !important;
+        border: 1px solid transparent !important;
+        box-shadow: none !important;
+    }
+    
+    .nav-item.active {
+        color: var(--neon-blue) !important;
+    }
+    
+    .nav-item span {
+        font-size: 9px !important;
+        font-weight: 500;
+    }
+    
+    .nav-item i {
+        font-size: 16px !important;
+    }
+    
+    .sidebar-footer {
+        display: none !important;
+    }
+    
+    /* Main Content Adjustments */
+    .main-content {
+        padding: 15px 15px 85px 15px !important;
+        height: auto;
+        overflow-y: visible;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .user-profile {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 5px;
+    }
+    
+    .auth-badge {
+        margin-left: 0 !important;
+        margin-right: 10px;
+    }
+    
+    /* Grid system stacking */
+    .vault-stats {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+    
+    .stat-card {
+        width: 100% !important;
+    }
+    
+    .lock-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+    
+    .card {
+        padding: 20px !important;
+    }
+    
+    /* Modals & Dialogs responsiveness */
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 10px !important;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    table {
+        min-width: 500px;
+    }
+}
+
