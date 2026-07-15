@@ -11,7 +11,11 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 
 def get_metadata_path():
-    return os.path.join(current_app.config['SECURE_DIR'], "vault_metadata.json")
+    from flask import session
+    email = session.get('email', 'global')
+    import hashlib
+    email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()[:16]
+    return os.path.join(current_app.config['SECURE_DIR'], f"vault_metadata_{email_hash}.json")
 
 def load_metadata():
     path = get_metadata_path()

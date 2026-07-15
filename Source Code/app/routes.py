@@ -21,15 +21,26 @@ def get_config_path():
         return "/tmp/AI_Locker/vault_config.json"
     return os.path.join(current_app.config['BASE_DIR'], "Related or Required Files", "vault_config.json")
 
+def get_pca_path(email=None):
+    face_dir = current_app.config['FACE_DATA_DIR']
+    if not email:
+        email = session.get('email', 'global')
+    import hashlib
+    email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()[:16]
+    return os.path.join(face_dir, f"pca_model_{email_hash}.npz")
+
 def load_vault_config():
     path = get_config_path()
     if os.path.exists(path):
         try:
             with open(path, "r") as f:
-                return json.load(f)
+                cfg = json.load(f)
+                if "users" not in cfg:
+                    cfg["users"] = {}
+                return cfg
         except Exception:
             pass
-    return {"setup_complete": False, "master_hash": "", "master_salt": "", "decoy_hash": "", "decoy_salt": ""}
+    return {"setup_complete": False, "users": {}}
 
 def save_vault_config(config):
     path = get_config_path()
@@ -52,10 +63,9 @@ def login_required(f):
 
 @current_app.route('/')
 def index():
-    # Check if biometric face profile is registered
-    face_dir = current_app.config['FACE_DATA_DIR']
-    pca_path = os.path.join(face_dir, "pca_model.npz")
-    biometrics_setup = os.path.exists(pca_path)
+    # Check if biometric face profile is registered for logged in user
+    email = session.get('email')
+    biometrics_setup = os.path.exists(get_pca_path(email)) if email else False
     
     config = load_vault_config()
     setup_needed = not config.get("setup_complete", False)
@@ -72,20 +82,27 @@ def index():
 
 @current_app.route('/api/setup', methods=['POST'])
 def setup_vault():
-    """Configures the Master and Decoy passwords on first launch."""
+    """Registers a new user account with Email, Master Password, and Decoy Password."""
     config = load_vault_config()
-    if config.get("setup_complete", False):
-        return jsonify({"success": False, "message": "Vault configuration setup is already complete."}), 400
-
     data = request.get_json() or {}
+    email = data.get("email", "").lower().strip()
     master_pwd = data.get("master_password", "")
     decoy_pwd = data.get("decoy_password", "")
+
+    if not email or "@" not in email:
+        return jsonify({"success": False, "message": "A valid email address is required."}), 400
 
     if not master_pwd or not decoy_pwd:
         return jsonify({"success": False, "message": "Passwords cannot be empty."}), 400
 
     if master_pwd == decoy_pwd:
         return jsonify({"success": False, "message": "Master and Decoy passwords must be different."}), 400
+
+    if "users" not in config:
+        config["users"] = {}
+
+    if email in config["users"]:
+        return jsonify({"success": False, "message": "This email address is already registered."}), 400
 
     import hashlib
     m_salt = os.urandom(16).hex()
@@ -94,48 +111,67 @@ def setup_vault():
     m_hash = hashlib.sha256((m_salt + master_pwd).encode()).hexdigest()
     d_hash = hashlib.sha256((d_salt + decoy_pwd).encode()).hexdigest()
 
-    config["master_hash"] = m_hash
-    config["master_salt"] = m_salt
-    config["decoy_hash"] = d_hash
-    config["decoy_salt"] = d_salt
+    config["users"][email] = {
+        "master_hash": m_hash,
+        "master_salt": m_salt,
+        "decoy_hash": d_hash,
+        "decoy_salt": d_salt
+    }
     config["setup_complete"] = True
 
     save_vault_config(config)
-    log_security_event("SETUP", "Master and Decoy vault passwords initialized successfully.")
-    return jsonify({"success": True, "message": "Vault passwords configured successfully!"})
+    log_security_event("SETUP", f"User account created for {email}.")
+    return jsonify({"success": True, "message": "Account created successfully!"})
 
 @current_app.route('/api/login', methods=['POST'])
 def login_vault():
-    """Authenticates access to either Master or Decoy vault database."""
+    """Authenticates user email and password, triggering biometrics if registered."""
     config = load_vault_config()
-    if not config.get("setup_complete", False):
-        return jsonify({"success": False, "message": "Credentials setup is not complete yet."}), 400
-
     data = request.get_json() or {}
+    email = data.get("email", "").lower().strip()
     password = data.get("password", "")
 
-    if not password:
-        return jsonify({"success": False, "message": "Password cannot be empty."}), 400
+    if not email or not password:
+        return jsonify({"success": False, "message": "Email and password cannot be empty."}), 400
+
+    if "users" not in config or email not in config["users"]:
+        log_security_event("LOGIN_FAILED", f"Failed unlock attempt: unregistered email ({email}).")
+        return jsonify({"success": False, "message": "Incorrect email or password."}), 401
 
     import hashlib
+    user_data = config["users"][email]
 
-    # 1. Check against Master credentials
-    m_salt = config["master_salt"]
+    # 1. Check Master password
+    m_salt = user_data["master_salt"]
     m_hash = hashlib.sha256((m_salt + password).encode()).hexdigest()
-    if m_hash == config["master_hash"]:
-        session['logged_in'] = True
+    if m_hash == user_data["master_hash"]:
+        pca_path = get_pca_path(email)
+        face_required = os.path.exists(pca_path)
+        
+        session['email'] = email
         session['auth_level'] = 'master'
-        log_security_event("LOGIN", "Vault opened with Master authorization level.")
-        return jsonify({"success": True, "auth_level": "master"})
+        
+        if face_required:
+            session['logged_in'] = False  # Wait for face verification
+            session['biometric_verified'] = False
+            log_security_event("LOGIN_PENDING", f"Master password correct. Biometric scan required for {email}.")
+            return jsonify({"success": True, "auth_level": "master", "face_required": True})
+        else:
+            session['logged_in'] = True
+            session['biometric_verified'] = False
+            log_security_event("LOGIN", f"Vault unlocked with Master access level for {email}.")
+            return jsonify({"success": True, "auth_level": "master", "face_required": False})
 
-    # 2. Check against Decoy credentials
-    d_salt = config["decoy_salt"]
+    # 2. Check Decoy password (Duress mode bypasses Face ID for safety)
+    d_salt = user_data["decoy_salt"]
     d_hash = hashlib.sha256((d_salt + password).encode()).hexdigest()
-    if d_hash == config["decoy_hash"]:
-        session['logged_in'] = True
+    if d_hash == user_data["decoy_hash"]:
+        session['email'] = email
         session['auth_level'] = 'decoy'
-        log_security_event("LOGIN", "Vault opened with Decoy Duress Mode (Decoy authorization level).", anomaly_flag=True)
-        return jsonify({"success": True, "auth_level": "decoy"})
+        session['logged_in'] = True
+        session['biometric_verified'] = False
+        log_security_event("LOGIN", f"Vault unlocked with Decoy Duress Mode for {email}.", anomaly_flag=True)
+        return jsonify({"success": True, "auth_level": "decoy", "face_required": False})
 
     log_security_event("LOGIN_FAILED", "Failed vault unlock attempt: invalid password.")
     return jsonify({"success": False, "message": "Incorrect vault password."}), 401
@@ -403,6 +439,7 @@ def unlock_item():
 def video_feed():
     """Webcam MJPEG stream endpoint."""
     mode = request.args.get('mode', 'idle')
+    camera_manager.active_email = session.get('email', 'global')
     camera_manager.reset_state(mode)
     return Response(
         camera_manager.generate_frames(),
@@ -413,15 +450,19 @@ def video_feed():
 @login_required
 def biometrics_status():
     """Poll endpoint to fetch face registration/verification progress."""
-    face_dir = current_app.config['FACE_DATA_DIR']
-    pca_path = os.path.join(face_dir, "pca_model.npz")
-    registered = os.path.exists(pca_path)
+    registered = os.path.exists(get_pca_path())
 
     # Set session variable if verification passed
     if camera_manager.mode == "verify" and camera_manager.verification_finished and camera_manager.verification_success:
+        session['logged_in'] = True
         session['biometric_verified'] = True
         session['biometric_time'] = time.time()
-        log_security_event("BIOMETRIC_SUCCESS", "Face recognition matched authorized user profile.")
+        log_security_event("BIOMETRIC_SUCCESS", f"Face recognition matched authorized user profile for {session.get('email')}.")
+
+    # Fallback to bypass if camera error occurs during verification
+    if camera_manager.camera_error and camera_manager.mode == "verify":
+        session['logged_in'] = True
+        log_security_event("BIOMETRIC_BYPASS", f"Webcam connection failed. Biometric verification bypassed for {session.get('email')}.")
 
     # Log intruder snap if verification failed
     if camera_manager.mode == "verify" and camera_manager.verification_finished and not camera_manager.verification_success:

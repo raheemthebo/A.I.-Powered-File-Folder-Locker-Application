@@ -392,12 +392,17 @@
             <div class="lock-screen-header">
                 <i class="fa-solid fa-shield-halved logo-icon"></i>
                 <h2>Initialize AI Locker</h2>
-                <p>Configure your Master and Decoy passwords to initialize secure vault operations.</p>
+                <p>Register your email and passwords to secure vault operations.</p>
             </div>
             
             <div class="alert-box warning hidden" id="setup-error-alert">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <p id="setup-error-msg">Passwords must be different.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="setup-email">Email Address</label>
+                <input type="email" id="setup-email" class="form-control" placeholder="Enter your email address...">
             </div>
 
             <div class="form-group">
@@ -421,8 +426,10 @@
             </div>
 
             <button class="btn btn-primary btn-block" id="btn-setup-submit">
-                <i class="fa-solid fa-circle-check"></i> Initialize Vault System
+                <i class="fa-solid fa-circle-check"></i> Register & Initialize
             </button>
+
+            <p class="auth-toggle-link text-center mt-3 text-sm">Already have an account? <a href="#" id="link-to-login" style="color: var(--neon-blue); text-decoration: none;">Log In</a></p>
         </div>
 
         <!-- 2. Secure Login Container -->
@@ -430,12 +437,17 @@
             <div class="lock-screen-header">
                 <i class="fa-solid fa-lock logo-icon"></i>
                 <h2>Unlock Secure Vault</h2>
-                <p>Vault is locked. Enter your authentication password to load vault index.</p>
+                <p>Vault is locked. Enter your credentials to unlock and load your vault catalog.</p>
             </div>
             
             <div class="alert-box warning hidden" id="login-error-alert">
                 <i class="fa-solid fa-circle-exclamation"></i>
                 <p id="login-error-msg">Incorrect password.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="login-email">Email Address</label>
+                <input type="email" id="login-email" class="form-control" placeholder="Enter your email...">
             </div>
 
             <div class="form-group">
@@ -451,10 +463,15 @@
             <button class="btn btn-primary btn-block" id="btn-login-submit">
                 <i class="fa-solid fa-unlock-keyhole"></i> Authenticate & Load
             </button>
+
+            <p class="auth-toggle-link text-center mt-3 text-sm">Don't have an account? <a href="#" id="link-to-setup" style="color: var(--neon-blue); text-decoration: none;">Create Account</a></p>
         </div>
     </div>
 
+    <!-- Hidden HTML5 Browser File Input for Vercel Cloud Fallback -->
+    <input type="file" id="web-file-picker" style="display: none;">
+
     <!-- Custom Logic Script -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="/static/js/app.js"></script>
 </body>
 </html>

@@ -23,6 +23,7 @@ if OPENCV_AVAILABLE:
             self.pca_mean = None
             self.threshold = 0.0
             self.model_loaded = False
+            self.active_email = ""
             
             # State variables for active video actions
             self.mode = "idle"  # "idle", "register", "verify"
@@ -37,7 +38,10 @@ if OPENCV_AVAILABLE:
         def load_model(self):
             """Loads the pre-trained PCA face recognition model from disk."""
             face_dir = current_app.config['FACE_DATA_DIR']
-            model_path = os.path.join(face_dir, "pca_model.npz")
+            email = self.active_email or "global"
+            import hashlib
+            email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()[:16]
+            model_path = os.path.join(face_dir, f"pca_model_{email_hash}.npz")
             if os.path.exists(model_path):
                 try:
                     data = np.load(model_path)
@@ -57,9 +61,14 @@ if OPENCV_AVAILABLE:
         def train_model(self) -> bool:
             """Trains the PCA model on the registered face photos."""
             face_dir = current_app.config['FACE_DATA_DIR']
+            email = self.active_email or "global"
+            import hashlib
+            email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()[:16]
+            
             images = []
+            prefix = f"user_{email_hash}_"
             for filename in os.listdir(face_dir):
-                if filename.endswith(".jpg") and filename.startswith("user_"):
+                if filename.endswith(".jpg") and filename.startswith(prefix):
                     img_path = os.path.join(face_dir, filename)
                     img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
                     if img is not None:
@@ -81,7 +90,7 @@ if OPENCV_AVAILABLE:
             
             self.threshold = max(900.0, mean_dist + 3.0 * std_dist)
 
-            model_path = os.path.join(face_dir, "pca_model.npz")
+            model_path = os.path.join(face_dir, f"pca_model_{email_hash}.npz")
             try:
                 np.savez(model_path,
                          components=self.pca.components_,
@@ -157,7 +166,10 @@ if OPENCV_AVAILABLE:
                     if self.mode == "register":
                         self.register_count += 1
                         face_dir = current_app.config['FACE_DATA_DIR']
-                        face_path = os.path.join(face_dir, f"user_{self.register_count}.jpg")
+                        email = self.active_email or "global"
+                        import hashlib
+                        email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()[:16]
+                        face_path = os.path.join(face_dir, f"user_{email_hash}_{self.register_count}.jpg")
                         try:
                             cv2.imwrite(face_path, face_resized)
                         except Exception:
@@ -230,6 +242,7 @@ else:
             self.intruder_captured = False
             self.camera_error = True
             self.model_loaded = False
+            self.active_email = ""
 
         def load_model(self):
             return False

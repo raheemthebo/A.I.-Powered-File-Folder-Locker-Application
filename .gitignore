@@ -11,6 +11,10 @@ Related or Required Files/intruders/*
 Related or Required Files/security_log.txt
 Related or Required Files/vault_config.json
 Output File/*
+Output.mp4
+*.mp4
+*.webp
+*.mov
 
 # Keep directory structures
 !Related or Required Files/secure_vault/.gitkeep
