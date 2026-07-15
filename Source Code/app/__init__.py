@@ -4,8 +4,15 @@ from flask import Flask
 # Base directory is the workspace root (parent of parent of this file)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# Redirect data folders to /tmp on Vercel serverless environment to bypass read-only filesystem locks
-if os.environ.get("VERCEL") == "1" or os.environ.get("NOW_REGION") is not None:
+# Redirect data folders to /tmp on Vercel or Google App Engine cloud environments to bypass read-only filesystem locks
+IS_CLOUD = (
+    os.environ.get("VERCEL") == "1" or 
+    os.environ.get("NOW_REGION") is not None or 
+    os.environ.get("GAE_ENV") is not None or
+    os.environ.get("GAE_SERVICE") is not None
+)
+
+if IS_CLOUD:
     REQUIRED_DIR = "/tmp/AI_Locker"
 else:
     REQUIRED_DIR = os.path.join(BASE_DIR, "Related or Required Files")
