@@ -429,6 +429,17 @@
                 <i class="fa-solid fa-circle-check"></i> Register & Initialize
             </button>
 
+            <div class="auth-divider">or</div>
+
+            <button class="btn-oauth" type="button" onclick="triggerGoogleAuth()">
+                <img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" alt="Google logo">
+                Continue with Google
+            </button>
+            <button class="btn-oauth" type="button" onclick="triggerAppleAuth()">
+                <i class="fa-brands fa-apple" style="color: var(--text-primary);"></i>
+                Continue with Apple
+            </button>
+
             <p class="auth-toggle-link text-center mt-3 text-sm">Already have an account? <a href="#" id="link-to-login" style="color: var(--neon-blue); text-decoration: none;">Log In</a></p>
         </div>
 
@@ -462,6 +473,17 @@
 
             <button class="btn btn-primary btn-block" id="btn-login-submit">
                 <i class="fa-solid fa-unlock-keyhole"></i> Authenticate & Load
+            </button>
+
+            <div class="auth-divider">or</div>
+
+            <button class="btn-oauth" type="button" onclick="triggerGoogleAuth()">
+                <img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" alt="Google logo">
+                Continue with Google
+            </button>
+            <button class="btn-oauth" type="button" onclick="triggerAppleAuth()">
+                <i class="fa-brands fa-apple" style="color: var(--text-primary);"></i>
+                Continue with Apple
             </button>
 
             <p class="auth-toggle-link text-center mt-3 text-sm">Don't have an account? <a href="#" id="link-to-setup" style="color: var(--neon-blue); text-decoration: none;">Create Account</a></p>

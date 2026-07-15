@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - Google Accounts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #202124;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 450px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .google-logo {
+            width: 75px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 8px;
+            color: #202124;
+        }
+
+        p.subtitle {
+            font-size: 16px;
+            color: #5f6368;
+            margin-bottom: 24px;
+        }
+
+        .account-list {
+            text-align: left;
+            margin-bottom: 30px;
+            border-top: 1px solid #dadce0;
+        }
+
+        .account-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #dadce0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .account-item:hover {
+            background: #f8f9fa;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #1a73e8;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            font-size: 14px;
+            margin-right: 12px;
+        }
+
+        .avatar.decoy-avatar {
+            background: #e37400;
+        }
+
+        .avatar.use-another {
+            background: transparent;
+            color: #1a73e8;
+            border: 1px solid #dadce0;
+        }
+
+        .account-details {
+            flex: 1;
+        }
+
+        .account-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #3c4043;
+        }
+
+        .account-email {
+            font-size: 12px;
+            color: #5f6368;
+        }
+
+        .custom-email-input {
+            display: none;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-top: 6px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: #1a73e8;
+            box-shadow: inset 0 0 0 1px #1a73e8;
+        }
+
+        .disclaimer {
+            font-size: 12px;
+            color: #5f6368;
+            line-height: 1.6;
+            margin-top: 24px;
+            text-align: left;
+        }
+
+        .disclaimer a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .disclaimer a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .btn-link {
+            color: #1a73e8;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn-blue {
+            background: #1a73e8;
+            color: #ffffff;
+            border: none;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-blue:hover {
+            background: #1b66ca;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google" class="google-logo">
+        
+        <div id="select-account-screen">
+            <h1>Choose an account</h1>
+            <p class="subtitle">to continue to AI Secure Locker</p>
+
+            <div class="account-list">
+                <div class="account-item" onclick="loginWithEmail('raheemthebo@gmail.com')">
+                    <div class="avatar">R</div>
+                    <div class="account-details">
+                        <div class="account-name">Rahim Thebo</div>
+                        <div class="account-email">raheemthebo@gmail.com</div>
+                    </div>
+                </div>
+                
+                <div class="account-item" onclick="loginWithEmail('missmehbooba847@gmail.com')">
+                    <div class="avatar decoy-avatar">M</div>
+                    <div class="account-details">
+                        <div class="account-name">Mehbooba</div>
+                        <div class="account-email">missmehbooba847@gmail.com</div>
+                    </div>
+                </div>
+
+                <div class="account-item" onclick="showCustomInput()">
+                    <div class="avatar use-another">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <div class="account-details">
+                        <div class="account-name" style="color: #1a73e8;">Use another account</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="custom-account-screen" style="display: none;">
+            <h1>Sign in</h1>
+            <p class="subtitle">with your Google Account</p>
+
+            <div class="custom-email-input" style="display: block;">
+                <label for="google-email" style="font-size: 14px; font-weight: 500; color: #3c4043;">Email or phone</label>
+                <input type="email" id="google-email" class="form-control" placeholder="Enter your email...">
+            </div>
+
+            <div class="btn-row">
+                <a class="btn-link" onclick="showSelectScreen()">Back</a>
+                <button class="btn-blue" onclick="submitCustomEmail()">Next</button>
+            </div>
+        </div>
+
+        <p class="disclaimer">
+            To continue, Google will share your name, email address, language preference, and profile picture with AI Secure Locker. See the <a href="#">Privacy Policy</a> and <a href="#">Terms of Service</a>.
+        </p>
+    </div>
+
+    <script>
+        function loginWithEmail(email) {
+            fetch('/api/auth/google/callback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.handleOauthLoginSuccess(data);
+                    }
+                    window.close();
+                } else {
+                    alert(data.message || "Failed to authenticate.");
+                }
+            })
+            .catch(err => {
+                console.error("SSO callback error:", err);
+                alert("Could not complete authentication callback.");
+            });
+        }
+
+        function showCustomInput() {
+            document.getElementById('select-account-screen').style.display = 'none';
+            document.getElementById('custom-account-screen').style.display = 'block';
+        }
+
+        function showSelectScreen() {
+            document.getElementById('select-account-screen').style.display = 'block';
+            document.getElementById('custom-account-screen').style.display = 'none';
+        }
+
+        function submitCustomEmail() {
+            const email = document.getElementById('google-email').value.trim();
+            if (!email || !email.includes('@')) {
+                alert("Please enter a valid Google email address.");
+                return;
+            }
+            loginWithEmail(email);
+        }
+    </script>
+</body>
+</html>

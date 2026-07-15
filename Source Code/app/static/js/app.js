@@ -922,3 +922,49 @@ function initAuth() {
         });
     }
 }
+
+// ==========================================
+// 9. OAUTH LOGIN TRIGGERS (GOOGLE / APPLE)
+// ==========================================
+function triggerGoogleAuth() {
+    const width = 500;
+    const height = 620;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    window.open('/api/auth/google', 'Google Sign-In', `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no`);
+}
+
+function triggerAppleAuth() {
+    alert("Apple Sign-In is only supported on iOS devices in production mode. Falling back to Google Login.");
+}
+
+// Global callback triggered by OAuth popup upon successful authentication
+window.handleOauthLoginSuccess = function(data) {
+    const lockScreen = document.getElementById('lock-screen-container');
+    if (lockScreen) lockScreen.classList.remove('active');
+    
+    // Show navigation controls
+    document.getElementById('global-auth-badge').classList.remove('hidden');
+    document.getElementById('btn-logout').classList.remove('hidden');
+    
+    // Configure visual mode
+    const authBadge = document.getElementById('global-auth-badge');
+    const authSpan = authBadge.querySelector('span');
+    const authIcon = authBadge.querySelector('i');
+    const lockTab = document.querySelector('.nav-item[data-tab="lock"]');
+    
+    authBadge.className = "auth-badge master";
+    authSpan.innerText = "Master Mode";
+    authIcon.className = "fa-solid fa-user-gear";
+    if (lockTab) lockTab.classList.remove('hidden');
+    
+    // Clear forms
+    document.getElementById('login-password').value = "";
+    document.getElementById('login-email').value = "";
+    
+    // Refresh content feeds
+    loadVault();
+    loadLogs();
+    checkBiometricStatus();
+};

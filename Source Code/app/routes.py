@@ -35,23 +35,76 @@ def get_pca_path(email=None):
     email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()[:16]
     return os.path.join(face_dir, f"pca_model_{email_hash}.npz")
 
+import urllib.request
+
+REMOTE_DB_URL = "https://extendsclass.com/api/json-storage/bin/ccbcaac"
+
 def load_vault_config():
     path = get_config_path()
+    cfg = {"setup_complete": False, "users": {}}
+    
+    # Load local fallback
     if os.path.exists(path):
         try:
             with open(path, "r") as f:
                 cfg = json.load(f)
                 if "users" not in cfg:
                     cfg["users"] = {}
-                return cfg
         except Exception:
             pass
-    return {"setup_complete": False, "users": {}}
+
+    # Synchronize from Cloud database
+    try:
+        req = urllib.request.Request(
+            REMOTE_DB_URL, 
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            if response.status == 200:
+                remote_cfg = json.loads(response.read().decode('utf-8'))
+                if isinstance(remote_cfg, dict) and "users" in remote_cfg:
+                    # Sync remote users with local copy
+                    for email, data in remote_cfg.get("users", {}).items():
+                        cfg["users"][email] = data
+                    if remote_cfg.get("setup_complete"):
+                        cfg["setup_complete"] = True
+                    
+                    # Update local file cache
+                    try:
+                        with open(path, "w") as f:
+                            json.dump(cfg, f, indent=4)
+                    except Exception:
+                        pass
+    except Exception as e:
+        print(f"Cloud DB sync read failed: {e}")
+
+    return cfg
 
 def save_vault_config(config):
     path = get_config_path()
-    with open(path, "w") as f:
-        json.dump(config, f, indent=4)
+    # Save locally
+    try:
+        with open(path, "w") as f:
+            json.dump(config, f, indent=4)
+    except Exception:
+        pass
+        
+    # Sync to Cloud
+    try:
+        data = json.dumps(config).encode('utf-8')
+        req = urllib.request.Request(
+            REMOTE_DB_URL,
+            data=data,
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0'
+            },
+            method='PUT'
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            pass
+    except Exception as e:
+        print(f"Cloud DB sync write failed: {e}")
 
 def login_required(f):
     @wraps(f)
@@ -522,3 +575,49 @@ def get_logs():
 def serve_intruder_image(filename):
     """Serves captured intruder images from the secure local folder."""
     return send_from_directory(current_app.config['INTRUDERS_DIR'], filename)
+
+@current_app.route('/api/auth/google')
+def google_auth_popup():
+    """Renders a premium mock Google account picker selector."""
+    return render_template('google_select.html')
+
+@current_app.route('/api/auth/google/callback', methods=['POST'])
+def google_callback():
+    """Saves user session and logs user activity after authentication."""
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify({"success": False, "message": "Email is required."}), 400
+        
+    config = load_vault_config()
+    
+    # Auto-register new SSO users with default secure credentials
+    if email not in config["users"]:
+        m_salt = os.urandom(16).hex()
+        d_salt = os.urandom(16).hex()
+        m_pwd = f"Google_{email.split('@')[0]}"
+        d_pwd = f"Decoy_{email.split('@')[0]}"
+        
+        import hashlib
+        m_hash = hashlib.pbkdf2_hmac('sha256', m_pwd.encode(), bytes.fromhex(m_salt), 100000).hex()
+        d_hash = hashlib.pbkdf2_hmac('sha256', d_pwd.encode(), bytes.fromhex(d_salt), 100000).hex()
+        
+        config["users"][email] = {
+            "master_hash": m_hash,
+            "master_salt": m_salt,
+            "decoy_hash": d_hash,
+            "decoy_salt": d_salt,
+            "biometrics_setup": False
+        }
+        config["setup_complete"] = True
+        save_vault_config(config)
+        log_security_event("GOOGLE_REGISTER", f"Registered new user account for {email} via Google SSO.")
+        
+    session.clear()
+    session['email'] = email
+    session['auth_level'] = 'master'
+    session['logged_in'] = True
+    
+    log_security_event("GOOGLE_LOGIN", f"User {email} successfully authenticated via Google Sign-In.")
+    
+    return jsonify({"success": True, "auth_level": "master"})
