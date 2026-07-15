@@ -798,11 +798,6 @@ function initAuth() {
                         // User is new: transition to OTP verification view
                         document.getElementById('lbl-otp-email').innerText = email;
                         otpInput.value = "";
-                        
-                        // Show OTP code in demo banner if returned
-                        if (data.otp_code) {
-                            document.getElementById('demo-otp-code').innerText = data.otp_code;
-                        }
                         showCard(otpCard);
                     }
                 } else {

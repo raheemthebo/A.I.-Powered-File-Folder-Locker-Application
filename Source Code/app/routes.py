@@ -202,7 +202,6 @@ def check_email():
         return jsonify({
             "success": True, 
             "registered": False, 
-            "otp_code": otp_code,
             "email_sent": sent
         })
     else:
