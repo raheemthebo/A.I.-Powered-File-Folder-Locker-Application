@@ -357,10 +357,15 @@ function loadVault() {
         .then(res => res.json())
         .then(data => {
             const body = document.getElementById('vault-items-body');
-            document.getElementById('stat-total-items').innerText = data.length;
             
-            const folderCount = data.filter(i => i.type === 'directory').length;
-            document.getElementById('stat-folders').innerText = folderCount;
+            const totalItemsEl = document.getElementById('stat-total-items');
+            if (totalItemsEl) totalItemsEl.innerText = data.length;
+            
+            const foldersEl = document.getElementById('stat-folders');
+            if (foldersEl) {
+                const folderCount = data.filter(i => i.type === 'directory').length;
+                foldersEl.innerText = folderCount;
+            }
 
             if (data.length === 0) {
                 body.innerHTML = `
