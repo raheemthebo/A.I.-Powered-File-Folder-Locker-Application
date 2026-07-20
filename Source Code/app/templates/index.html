@@ -12,154 +12,70 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="logo-area">
+        <!-- Jumpshare-style Top Navbar -->
+        <header class="app-header">
+            <div class="header-brand">
                 <i class="fa-solid fa-shield-halved logo-icon"></i>
                 <div class="logo-text">
-                    <h1>A.I. Locker</h1>
-                    <span>Gexton Internship</span>
+                    <h1>AI Secure Locker</h1>
+                    <span>AES-256 Military-Grade Vault</span>
                 </div>
             </div>
-            
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active" data-tab="vault">
-                    <i class="fa-solid fa-vault"></i>
-                    <span>Secure Vault</span>
-                </a>
-                <a href="#" class="nav-item" data-tab="lock">
-                    <i class="fa-solid fa-lock"></i>
-                    <span>Lock Files</span>
-                </a>
-                <a href="#" class="nav-item" data-tab="biometrics">
-                    <i class="fa-solid fa-face-smile"></i>
-                    <span>Face Biometrics</span>
-                </a>
-                <a href="#" class="nav-item" data-tab="security">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>Security Log</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <p>Mentor: Sir Muhammad Arham</p>
-                <div class="status-indicator-row">
-                    <div class="status-indicator">
-                        <span class="status-dot green"></span>
-                        <span class="status-label">Protected</span>
-                    </div>
-                    <button class="btn btn-logout-icon {% if not logged_in %}hidden{% endif %}" id="btn-logout" title="Lock Vault & Log Out">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                    </button>
+            <div class="header-controls {% if not logged_in %}hidden{% endif %}" id="dashboard-header-controls">
+                <div class="biometric-badge {% if biometrics_setup %}verified{% endif %}" id="global-bio-badge">
+                    <i class="fa-solid fa-face-viewfinder"></i>
+                    <span>{% if biometrics_setup %}Face ID Ready{% else %}Face ID Not Configured{% endif %}</span>
                 </div>
+                <div class="auth-badge {% if auth_level == 'decoy' %}decoy{% else %}master{% endif %}" id="global-auth-badge">
+                    <i class="fa-solid {% if auth_level == 'decoy' %}fa-mask{% else %}fa-user-gear{% endif %}"></i>
+                    <span>{% if auth_level == 'decoy' %}Decoy Mode{% else %}Master Mode{% endif %}</span>
+                </div>
+                <button class="btn btn-logout-icon" id="btn-logout" title="Lock Vault & Log Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
             </div>
-        </aside>
+        </header>
 
         <!-- Main Dashboard View -->
         <main class="main-content">
-            <!-- Header bar -->
-            <header class="dashboard-header">
-                <div class="header-title">
-                    <h2 id="tab-title">Secure Vault Catalog</h2>
-                    <p id="tab-subtitle">Manage your encrypted files and folders securely</p>
+            <!-- Jumpshare Layout Centered Dashboard Panel -->
+            <div class="jumpshare-dashboard {% if not logged_in %}hidden{% endif %}" id="jumpshare-dashboard-view">
+                <!-- Hero Titles -->
+                <div class="jumpshare-hero">
+                    <h2>Lock Your Files & Folders</h2>
+                    <p>Password protect your files and folders online with our AI-powered secure vault.</p>
                 </div>
-                <div class="user-profile">
-                    <div class="biometric-badge {% if biometrics_setup %}verified{% endif %}" id="global-bio-badge">
-                        <i class="fa-solid fa-face-viewfinder"></i>
-                        <span>{% if biometrics_setup %}Face ID Ready{% else %}Face ID Not Configured{% endif %}</span>
+
+                <!-- Jumpshare Upload card container -->
+                <div class="drop-zone-card" id="drop-zone-container">
+                    <!-- State 1: Drop Zone Ready -->
+                    <div id="drop-zone-ready" class="drop-zone-state">
+                        <div class="drop-zone-icon">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </div>
+                        <div class="target-picker-group">
+                            <button class="btn btn-primary" id="btn-browse-file">
+                                <i class="fa-solid fa-file-arrow-up"></i> Choose File
+                            </button>
+                            <button class="btn btn-secondary" id="btn-browse-folder">
+                                <i class="fa-solid fa-folder-plus"></i> Choose Folder
+                            </button>
+                        </div>
+                        <p class="drop-zone-text">or, drop items here</p>
+                        <p class="drop-zone-subtext">Supports files and folders (automatically compressed & encrypted)</p>
                     </div>
-                    <div class="auth-badge {% if auth_level == 'decoy' %}decoy{% else %}master{% endif %} {% if not logged_in %}hidden{% endif %}" id="global-auth-badge">
-                        <i class="fa-solid {% if auth_level == 'decoy' %}fa-mask{% else %}fa-user-gear{% endif %}"></i>
-                        <span>{% if auth_level == 'decoy' %}Decoy Mode{% else %}Master Mode{% endif %}</span>
-                    </div>
-                </div>
-            </header>
+                    <input type="file" id="web-file-picker" style="display: none;">
 
-            <!-- Tab Content Panel -->
-            <div class="content-body">
-                
-                <!-- 1. VAULT TAB -->
-                <section id="tab-vault" class="tab-pane active">
-                    <div class="vault-stats">
-                        <div class="stat-card">
-                            <i class="fa-solid fa-file-shield text-blue"></i>
-                            <div class="stat-info">
-                                <h3 id="stat-total-items">0</h3>
-                                <p>Total Locked Items</p>
-                            </div>
+                    <!-- State 2: Lock Form (Selected Target parameters) -->
+                    <div id="drop-zone-form" class="drop-zone-state hidden">
+                        <input type="hidden" id="target-path">
+                        <div class="selected-item-info">
+                            <i id="selected-item-icon" class="fa-solid fa-file-shield text-blue"></i>
+                            <h4 id="selected-item-name">Selected Item</h4>
+                            <p id="selected-item-path" class="text-muted"></p>
                         </div>
-                        <div class="stat-card">
-                            <i class="fa-solid fa-folder-closed text-orange"></i>
-                            <div class="stat-info">
-                                <h3 id="stat-folders">0</h3>
-                                <p>Directories Locked</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <i class="fa-solid fa-circle-check text-green"></i>
-                            <div class="stat-info">
-                                <h3>100%</h3>
-                                <p>Encryption Strength</p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="card vault-list-card">
-                        <div class="card-header">
-                            <h3>Encrypted Catalog</h3>
-                            <button class="btn btn-secondary-icon" onclick="loadVault()"><i class="fa-solid fa-rotate"></i> Refresh</button>
-                        </div>
-                        <div class="table-container">
-                            <table class="vault-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Type</th>
-                                        <th>Original Location</th>
-                                        <th>Locked Date</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="vault-items-body">
-                                    <!-- Items loaded dynamically -->
-                                    <tr class="empty-row">
-                                        <td colspan="5">
-                                            <div class="empty-state">
-                                                <i class="fa-solid fa-box-open"></i>
-                                                <p>Your secure vault is empty. Lock files to get started.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 2. LOCK TAB -->
-                <section id="tab-lock" class="tab-pane">
-                    <div class="lock-grid">
-                        <div class="card lock-form-card">
-                            <h3>Lock New Item</h3>
-                            <p class="section-desc">Encrypt a file or folder using custom derived military-grade password encryption keys.</p>
-                            
-                            <div class="form-group">
-                                <label>Select Target</label>
-                                <div class="target-picker-group">
-                                    <button class="btn btn-secondary" id="btn-browse-file">
-                                        <i class="fa-solid fa-file"></i> Choose File
-                                    </button>
-                                    <button class="btn btn-secondary" id="btn-browse-folder">
-                                        <i class="fa-solid fa-folder-open"></i> Choose Folder
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="target-path">Selected Path</label>
-                                <input type="text" id="target-path" class="form-control" placeholder="Enter path manually or choose using the buttons below...">
-                            </div>
-
+                        <div class="lock-form-inputs">
                             <div class="form-group">
                                 <label for="lock-password">Set Unlock Password</label>
                                 <div class="password-input-wrapper">
@@ -169,8 +85,29 @@
                                     </button>
                                 </div>
                             </div>
+                            
+                            <div class="form-group">
+                                <label for="lock-decoy-password">Set Decoy Password (Duress Mode)</label>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="lock-decoy-password" class="form-control" placeholder="Decoy/fake vault password...">
+                                    <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('lock-decoy-password', this)">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
 
-                            <div class="form-group checkbox-group">
+                            <!-- AI Password classification metrics -->
+                            <div class="password-strength-container mt-2">
+                                <div class="strength-bar-wrapper">
+                                    <div class="strength-bar-fill" id="strength-bar-fill" style="width: 0%;"></div>
+                                </div>
+                                <div class="strength-label-row">
+                                    <span class="strength-label" id="strength-label">Password Strength: -</span>
+                                    <span class="classification-badge" id="classification-badge">Unclassified</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group checkbox-group mt-3">
                                 <label class="checkbox-container">
                                     <input type="checkbox" id="delete-original" checked>
                                     <span class="checkmark"></span>
@@ -178,133 +115,149 @@
                                 </label>
                             </div>
 
-                            <button class="btn btn-primary btn-block" id="btn-lock-submit" disabled>
-                                <i class="fa-solid fa-lock"></i> Secure & Lock Item
-                            </button>
-                        </div>
-
-                        <!-- AI Password Advisor -->
-                        <div class="card ai-advisor-card">
-                            <div class="advisor-header">
-                                <i class="fa-solid fa-brain brain-icon"></i>
-                                <div>
-                                    <h3>A.I. Password Advisor</h3>
-                                    <span>Real-time ML Strength Classifier</span>
-                                </div>
-                            </div>
-                            
-                            <div class="advisor-body">
-                                <div class="strength-meter-container">
-                                    <div class="meter-bar">
-                                        <div class="meter-fill" id="pwd-meter-fill" style="width: 0%;"></div>
-                                    </div>
-                                    <div class="meter-labels">
-                                        <span class="strength-val text-red" id="pwd-strength-label">Enter Password</span>
-                                        <span class="pct-val" id="pwd-pct-label">0%</span>
-                                    </div>
-                                </div>
-
-                                <div class="suggestions-box">
-                                    <h4>A.I. Recommendations:</h4>
-                                    <ul class="suggestions-list" id="pwd-suggestions">
-                                        <li>Type a password to start evaluation...</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 3. BIOMETRICS TAB -->
-                <section id="tab-biometrics" class="tab-pane">
-                    <div class="biometrics-grid">
-                        <div class="card camera-card">
-                            <h3>Face Registration Feed</h3>
-                            <p class="section-desc">Look directly into the camera to build your local AI face signature model.</p>
-                            
-                            <div class="camera-stream-wrapper">
-                                <img src="" id="camera-stream" alt="Webcam Feed Disabled" class="camera-stream">
-                                <div class="camera-overlay" id="camera-overlay">
-                                    <div class="scanner-line"></div>
-                                    <div class="overlay-text" id="camera-overlay-text">Camera Standby</div>
-                                </div>
-                            </div>
-
-                            <div class="camera-controls">
-                                <button class="btn btn-primary" id="btn-register-face">
-                                    <i class="fa-solid fa-camera"></i> Register Biometrics
-                                </button>
-                                <button class="btn btn-danger hidden" id="btn-cancel-cam">
-                                    <i class="fa-solid fa-circle-stop"></i> Cancel
+                            <div class="btn-action-row mt-4">
+                                <button class="btn btn-secondary" id="btn-lock-cancel">Cancel</button>
+                                <button class="btn btn-primary" id="btn-lock-submit">
+                                    <i class="fa-solid fa-shield-halved"></i> Secure & Lock
                                 </button>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="card info-card">
-                            <h3>Biometric Verification Settings</h3>
-                            <p class="section-desc">Biometrics add an additional cryptographic factor to your secure vault.</p>
-                            
-                            <div class="biometric-status-card">
-                                <div class="status-item">
-                                    <span class="label">Registration Status</span>
-                                    <span class="badge" id="bio-setup-status">Checking...</span>
-                                </div>
-                                <div class="status-item">
-                                    <span class="label">Classifier Base</span>
-                                    <span>sklearn PCA Eigenfaces</span>
-                                </div>
-                                <div class="status-item">
-                                    <span class="label">Sample Images Captured</span>
-                                    <span id="captured-samples-lbl">0 / 30</span>
-                                </div>
-                            </div>
+                    <!-- State 3: Success Screen -->
+                    <div id="drop-zone-success" class="drop-zone-state hidden">
+                        <div class="success-indicator">
+                            <i class="fa-solid fa-circle-check text-green"></i>
+                            <h3>Lock Complete</h3>
+                            <p id="success-item-name" class="text-muted"></p>
+                        </div>
+                        <button class="btn btn-primary mt-4" id="btn-lock-reset">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> Lock Another File
+                        </button>
+                    </div>
+                </div>
 
-                            <div class="alert-box info">
-                                <i class="fa-solid fa-circle-info"></i>
-                                <p><strong>How it works:</strong> Once your face is registered, unlocking any file will require you to stand in front of the camera for real-time verification. If an unrecognized person attempts access, the system snaps their photo and triggers an anomaly alert.</p>
+                <!-- Encrypted Vault Catalog Table Card -->
+                <div class="card vault-catalog-card mt-5">
+                    <div class="card-header">
+                        <div>
+                            <h3>Secure Vault Catalog</h3>
+                            <p class="section-desc">View, manage, and unlock your encrypted items.</p>
+                        </div>
+                        <button class="btn btn-secondary-icon" onclick="loadVault()"><i class="fa-solid fa-rotate"></i> Refresh Vault</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="vault-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Original Location</th>
+                                    <th>Locked Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vault-items-body">
+                                <tr class="empty-row">
+                                    <td colspan="5">
+                                        <div class="empty-state">
+                                            <i class="fa-solid fa-box-open"></i>
+                                            <p>Your secure vault is empty. Select or drop items above to protect them.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Collapsible FAQs accordion list (Security stats & Biometrics) -->
+                <div class="jumpshare-accordion-group mt-5">
+                    <!-- Security Logs Accordion Card -->
+                    <div class="accordion-card">
+                        <div class="accordion-header" onclick="toggleAccordion('acc-security-logs')">
+                            <h3><i class="fa-solid fa-triangle-exclamation text-orange"></i> Security Logs & AI Anomaly Monitor</h3>
+                            <i class="fa-solid fa-chevron-down acc-arrow"></i>
+                        </div>
+                        <div class="accordion-content" id="acc-security-logs">
+                            <div class="logs-accordion-body">
+                                <div class="logs-header">
+                                    <div class="sec-stat-badge">
+                                        <span>Anomalies Flagged:</span>
+                                        <strong id="sec-total-anomalies" class="text-red">0</strong>
+                                    </div>
+                                    <div class="sec-stat-badge">
+                                        <span>Normal Logins:</span>
+                                        <strong id="sec-normal-logins" class="text-green">0</strong>
+                                    </div>
+                                    <button class="btn btn-secondary-icon" onclick="loadLogs()"><i class="fa-solid fa-rotate"></i> Refresh Logs</button>
+                                </div>
+                                <div class="alert-box warning hidden" id="high-risk-alert">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <p><strong>CRITICAL RISK:</strong> High number of anomalous/unauthorized attempts. Review camera snapshots.</p>
+                                </div>
+                                <div class="logs-container">
+                                    <div class="log-entries" id="log-entries-body">
+                                        <p class="text-center text-muted">No security events logged yet.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </section>
 
-                <!-- 4. SECURITY TAB -->
-                <section id="tab-security" class="tab-pane">
-                    <div class="logs-grid">
-                        <div class="card logs-list-card">
-                            <div class="card-header">
-                                <h3>Access Activity Monitor</h3>
-                                <button class="btn btn-secondary-icon" onclick="loadLogs()"><i class="fa-solid fa-rotate"></i> Refresh Logs</button>
-                            </div>
-                            <div class="logs-container">
-                                <div class="log-entries" id="log-entries-body">
-                                    <!-- Logs loaded dynamically -->
-                                    <p class="text-center text-muted">No security events logged yet.</p>
-                                </div>
-                            </div>
+                    <!-- OpenCV Face ID Biometrics Accordion Card -->
+                    <div class="accordion-card mt-3">
+                        <div class="accordion-header" onclick="toggleAccordion('acc-biometrics')">
+                            <h3><i class="fa-solid fa-face-smile text-blue"></i> OpenCV Facial Biometrics Setup</h3>
+                            <i class="fa-solid fa-chevron-down acc-arrow"></i>
                         </div>
-
-                        <div class="card security-stats-card">
-                            <h3>A.I. Anomaly Dashboard</h3>
-                            <p class="section-desc">Real-time Isolation Forest evaluation of typing and access profiles.</p>
-                            
-                            <div class="security-stats-grid">
-                                <div class="sec-stat bg-red-opacity">
-                                    <h4 id="sec-total-anomalies">0</h4>
-                                    <span>Anomalies Flagged</span>
+                        <div class="accordion-content" id="acc-biometrics">
+                            <div class="biometrics-accordion-body">
+                                <div class="bio-settings-row">
+                                    <div class="camera-feed-card">
+                                        <h4>Face Registration Feed</h4>
+                                        <div class="camera-stream-wrapper">
+                                            <img src="" id="camera-stream" alt="Webcam Feed Disabled" class="camera-stream">
+                                            <div class="camera-overlay" id="camera-overlay">
+                                                <div class="scanner-line"></div>
+                                                <div class="overlay-text" id="camera-overlay-text">Camera Standby</div>
+                                            </div>
+                                        </div>
+                                        <div class="camera-controls">
+                                            <button class="btn btn-primary" id="btn-register-face">
+                                                <i class="fa-solid fa-camera"></i> Register Biometrics
+                                            </button>
+                                            <button class="btn btn-danger hidden" id="btn-cancel-cam">
+                                                <i class="fa-solid fa-circle-stop"></i> Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="bio-info-card">
+                                        <h4>Biometric Verification Profile</h4>
+                                        <div class="biometric-status-card">
+                                            <div class="status-item">
+                                                <span class="label">Status</span>
+                                                <span class="badge" id="bio-setup-status">Checking...</span>
+                                            </div>
+                                            <div class="status-item">
+                                                <span class="label">Classifier</span>
+                                                <span>sklearn PCA Eigenfaces</span>
+                                            </div>
+                                            <div class="status-item">
+                                                <span class="label">Samples</span>
+                                                <span id="captured-samples-lbl">0 / 30</span>
+                                            </div>
+                                        </div>
+                                        <div class="alert-box info mt-3">
+                                            <i class="fa-solid fa-circle-info"></i>
+                                            <p>Once registered, unlocking files triggers a webcam check verifying identity. Unrecognized attempts log intruder photographs.</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="sec-stat bg-green-opacity">
-                                    <h4 id="sec-normal-logins">0</h4>
-                                    <span>Normal Logins</span>
-                                </div>
-                            </div>
-
-                            <div class="alert-box warning hidden" id="high-risk-alert">
-                                <i class="fa-solid fa-triangle-exclamation"></i>
-                                <p><strong>CRITICAL ALERT:</strong> A high number of anomalous/unauthorized attempts have been logged. Intruder logs contain images of access bypass failures.</p>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
             </div>
         </main>
     </div>

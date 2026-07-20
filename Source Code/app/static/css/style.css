@@ -40,8 +40,8 @@
 body {
     background-color: var(--bg-main);
     color: var(--text-primary);
-    overflow: hidden;
-    height: 100vh;
+    overflow-y: auto;
+    min-height: 100vh;
     width: 100vw;
 }
 
@@ -58,167 +58,90 @@ body {
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 210, 255, 0.3);
+    background: rgba(47, 118, 255, 0.3);
 }
 
 /* ==========================================
    LAYOUT STRUCTURE
    ========================================== */
 .app-container {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
+    display: block;
+    width: 100%;
+    min-height: 100vh;
     position: relative;
-    background-image: radial-gradient(circle at 10% 20%, rgba(10, 25, 50, 0.5) 0%, transparent 50%),
-                      radial-gradient(circle at 90% 80%, rgba(30, 10, 50, 0.4) 0%, transparent 50%);
+    background-image: radial-gradient(circle at 10% 20%, rgba(10, 25, 50, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at 90% 80%, rgba(30, 10, 50, 0.3) 0%, transparent 50%);
 }
 
-/* Sidebar Layout */
-.sidebar {
-    width: 260px;
-    background-color: var(--bg-sidebar);
-    border-right: 1px solid var(--glass-border);
+/* Jumpshare style Top Navbar */
+.app-header {
     display: flex;
-    flex-direction: column;
-    padding: 24px;
-    z-index: 10;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 40px;
+    background: rgba(15, 16, 26, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
 }
 
-.logo-area {
+.header-brand {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 40px;
 }
 
-.logo-icon {
-    font-size: 28px;
-    color: var(--neon-blue);
-    text-shadow: 0 0 12px var(--neon-blue-glow);
+.header-brand .logo-icon {
+    font-size: 24px;
+    color: #2F76FF;
+    text-shadow: 0 0 10px rgba(47, 118, 255, 0.3);
 }
 
 .logo-text h1 {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: -0.5px;
+    margin-bottom: 0;
 }
 
 .logo-text span {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-secondary);
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
+    display: block;
 }
 
-.nav-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
-}
-
-.nav-item {
+.header-controls {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 12px 16px;
-    color: var(--text-secondary);
-    text-decoration: none;
-    border-radius: 10px;
-    transition: var(--transition-smooth);
-    border: 1px solid transparent;
-}
-
-.nav-item i {
-    font-size: 18px;
-    width: 20px;
-    text-align: center;
-}
-
-.nav-item:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.nav-item.active {
-    color: var(--neon-blue);
-    background: rgba(0, 210, 255, 0.06);
-    border-color: rgba(0, 210, 255, 0.15);
-    box-shadow: inset 0 0 10px rgba(0, 210, 255, 0.05);
-}
-
-.sidebar-footer {
-    padding-top: 20px;
-    border-top: 1px solid var(--glass-border);
-}
-
-.sidebar-footer p {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-}
-
-.status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.status-dot.green {
-    background-color: var(--neon-green);
-    box-shadow: 0 0 8px var(--neon-green);
-}
-
-.status-label {
-    font-size: 11px;
-    color: var(--text-secondary);
-    font-weight: 500;
 }
 
 /* Main Content Panel */
 .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    padding: 30px;
-}
-
-.dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
-
-.header-title h2 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.header-title p {
-    font-size: 14px;
-    color: var(--text-secondary);
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    overflow: visible;
+    width: 100%;
 }
 
 .biometric-badge {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    background: rgba(244, 63, 94, 0.08);
-    border: 1px solid rgba(244, 63, 94, 0.2);
-    color: var(--neon-red);
-    border-radius: 30px;
-    font-size: 12px;
-    font-weight: 600;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
     transition: var(--transition-smooth);
 }
 
@@ -1567,6 +1490,211 @@ body {
     
     table {
         min-width: 500px;
+    }
+}
+
+/* ==========================================
+   JUMPSHARE STYLE DASHBOARD ELEMENTS
+   ========================================== */
+.jumpshare-hero {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.jumpshare-hero h2 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.jumpshare-hero p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Jumpshare Drop Zone Card styling */
+.drop-zone-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed rgba(47, 118, 255, 0.2);
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.drop-zone-card:hover, .drop-zone-card.dragover {
+    border-color: #2F76FF;
+    background: rgba(47, 118, 255, 0.02);
+    box-shadow: 0 20px 40px rgba(47, 118, 255, 0.05);
+}
+
+.drop-zone-icon {
+    font-size: 48px;
+    color: #2F76FF;
+    margin-bottom: 24px;
+    opacity: 0.8;
+}
+
+.drop-zone-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 14px;
+}
+
+.drop-zone-subtext {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.drop-zone-state {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Selected item display inside upload box */
+.selected-item-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.selected-item-info i {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.selected-item-info h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+/* Inputs wrapper within drop zone state */
+.lock-form-inputs {
+    max-width: 480px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.btn-action-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Jumpshare Accordion FAQs Groups */
+.jumpshare-accordion-group {
+    width: 100%;
+}
+
+.accordion-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: var(--transition-smooth);
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition-smooth);
+}
+
+.accordion-header:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.accordion-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.acc-arrow {
+    font-size: 13px;
+    color: var(--text-secondary);
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.accordion-card.active .acc-arrow {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.accordion-card.active .accordion-content {
+    max-height: 800px;
+}
+
+.logs-accordion-body, .biometrics-accordion-body {
+    padding: 24px;
+    border-top: 1px solid var(--glass-border);
+    background: rgba(10, 11, 16, 0.3);
+}
+
+.logs-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.sec-stat-badge {
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    padding: 6px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sec-stat-badge strong {
+    font-size: 13px;
+}
+
+.bio-settings-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+}
+
+.camera-feed-card h4, .bio-info-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+@media(max-width: 768px) {
+    .bio-settings-row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .app-header {
+        padding: 16px 20px;
     }
 }
 

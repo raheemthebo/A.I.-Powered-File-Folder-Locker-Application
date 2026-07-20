@@ -1,5 +1,6 @@
+
+// ==========================================
 // Global State Variables
-let currentTab = 'vault';
 let selectedItemId = null;
 let passwordModalOpenTime = null;
 let biometricPollInterval = null;
@@ -7,16 +8,22 @@ let isCameraActive = false;
 
 // Page Load Setup
 document.addEventListener('DOMContentLoaded', () => {
-    initNavigation();
+    initDragAndDrop();
     initFileBrowsing();
     initPasswordAnalyzer();
     initLocker();
+    initLockResetAndCancelHandlers();
     initBiometricRegistration();
     initAuth();
     
     // Initial data load only if session is already active (e.g. reload after logging in)
     const lockScreen = document.getElementById('lock-screen-container');
     if (lockScreen && !lockScreen.classList.contains('active')) {
+        const view = document.getElementById('jumpshare-dashboard-view');
+        if (view) view.classList.remove('hidden');
+        const headerControls = document.getElementById('dashboard-header-controls');
+        if (headerControls) headerControls.classList.remove('hidden');
+        
         loadVault();
         loadLogs();
         checkBiometricStatus();
@@ -24,55 +31,113 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 1. NAVIGATION & TAB SWITCHING
+// 1. DRAG AND DROP & ACCORDIONS INTEGRATION
 // ==========================================
-function initNavigation() {
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
+function initDragAndDrop() {
+    const dropZone = document.getElementById('drop-zone-container');
+    
+    if (!dropZone) return;
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
             e.preventDefault();
-            const targetTab = item.getAttribute('data-tab');
-            switchTab(targetTab);
-        });
+            e.stopPropagation();
+            dropZone.classList.add('dragover');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('dragover');
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+            handleSelectedTarget(files[0].name, 'file');
+        }
     });
 }
 
-function switchTab(tabId) {
-    // Hide active tabs and deactivate menu links
-    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+// Global Accordion Controller
+window.toggleAccordion = function(id) {
+    const content = document.getElementById(id);
+    const card = content.closest('.accordion-card');
     
-    // Show selected tab and activate link
-    document.getElementById(`tab-${tabId}`).classList.add('active');
-    document.querySelector(`.nav-item[data-tab="${tabId}"]`).classList.add('active');
-    
-    // Update headers
-    const title = document.getElementById('tab-title');
-    const subtitle = document.getElementById('tab-subtitle');
-    
-    currentTab = tabId;
-    
-    // If user navigates away from biometrics, make sure camera is stopped
-    if (tabId !== 'biometrics' && isCameraActive) {
-        stopBiometricCamera();
+    if (card.classList.contains('active')) {
+        card.classList.remove('active');
+        content.style.maxHeight = null;
+    } else {
+        // Close others
+        document.querySelectorAll('.accordion-card').forEach(c => {
+            c.classList.remove('active');
+            const cnt = c.querySelector('.accordion-content');
+            if (cnt) cnt.style.maxHeight = null;
+        });
+        
+        card.classList.add('active');
+        content.style.maxHeight = content.scrollHeight + "px";
+        
+        if (id === 'acc-biometrics') {
+            checkBiometricStatus();
+        } else if (id === 'acc-security-logs') {
+            loadLogs();
+        }
     }
+};
 
-    if (tabId === 'vault') {
-        title.innerText = "Secure Vault Catalog";
-        subtitle.innerText = "Manage your encrypted files and folders securely";
-        loadVault();
-    } else if (tabId === 'lock') {
-        title.innerText = "Lock Files & Folders";
-        subtitle.innerText = "Encrypt items and remove originals for maximum security";
-        resetLockForm();
-    } else if (tabId === 'biometrics') {
-        title.innerText = "Biometric Setup";
-        subtitle.innerText = "Configure face recognition login profiles";
-        checkBiometricStatus();
-    } else if (tabId === 'security') {
-        title.innerText = "Security Control Center";
-        subtitle.innerText = "Monitor login attempts, anomaly warnings, and lock activities";
-        loadLogs();
+// Handle transitions when file/folder is selected
+function handleSelectedTarget(path, type) {
+    const readyState = document.getElementById('drop-zone-ready');
+    const formState = document.getElementById('drop-zone-form');
+    const successState = document.getElementById('drop-zone-success');
+    
+    const hiddenPath = document.getElementById('target-path');
+    const pathText = document.getElementById('selected-item-path');
+    const nameText = document.getElementById('selected-item-name');
+    const iconEl = document.getElementById('selected-item-icon');
+    
+    // Set paths
+    hiddenPath.value = path;
+    pathText.innerText = path;
+    
+    // Extract base name
+    const parts = path.split(/[\\/]/);
+    nameText.innerText = parts[parts.length - 1] || path;
+    
+    // Icon configurations
+    if (type === 'directory') {
+        iconEl.className = "fa-solid fa-folder-closed text-orange";
+    } else {
+        iconEl.className = "fa-solid fa-file-shield text-blue";
+    }
+    
+    // Switch states
+    readyState.classList.add('hidden');
+    successState.classList.add('hidden');
+    formState.classList.remove('hidden');
+    
+    validateLockForm();
+}
+
+function initLockResetAndCancelHandlers() {
+    const cancelBtn = document.getElementById('btn-lock-cancel');
+    const resetBtn = document.getElementById('btn-lock-reset');
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            resetLockForm();
+        });
+    }
+    
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            resetLockForm();
+        });
     }
 }
 
@@ -82,7 +147,6 @@ function switchTab(tabId) {
 function initFileBrowsing() {
     const fileBtn = document.getElementById('btn-browse-file');
     const folderBtn = document.getElementById('btn-browse-folder');
-    const pathInput = document.getElementById('target-path');
     const webFilePicker = document.getElementById('web-file-picker');
 
     const isCloud = window.location.hostname !== '127.0.0.1' && window.location.hostname !== 'localhost';
@@ -92,8 +156,7 @@ function initFileBrowsing() {
             .then(res => res.json())
             .then(data => {
                 if (data.path) {
-                    pathInput.value = data.path;
-                    validateLockForm();
+                    handleSelectedTarget(data.path, mode === 'folder' ? 'directory' : 'file');
                 }
             })
             .catch(err => {
@@ -102,28 +165,33 @@ function initFileBrowsing() {
             });
     };
 
-    fileBtn.addEventListener('click', () => {
-        if (isCloud) {
-            webFilePicker.click();
-        } else {
-            triggerBrowse('file');
-        }
-    });
+    if (fileBtn) {
+        fileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (isCloud) {
+                webFilePicker.click();
+            } else {
+                triggerBrowse('file');
+            }
+        });
+    }
 
-    folderBtn.addEventListener('click', () => {
-        if (isCloud) {
-            alert("Folder selection is only supported in local desktop mode. Please type/paste the folder path manually, or select a file instead.");
-        } else {
-            triggerBrowse('folder');
-        }
-    });
+    if (folderBtn) {
+        folderBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (isCloud) {
+                alert("Folder selection is only supported in local desktop mode. Please select a file instead.");
+            } else {
+                triggerBrowse('folder');
+            }
+        });
+    }
 
     if (webFilePicker) {
         webFilePicker.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                pathInput.value = file.name;
-                validateLockForm();
+                handleSelectedTarget(file.name, 'file');
             }
         });
     }
@@ -136,6 +204,8 @@ function initPasswordAnalyzer() {
     const passwordInput = document.getElementById('lock-password');
     let debounceTimer;
 
+    if (!passwordInput) return;
+
     passwordInput.addEventListener('input', (e) => {
         clearTimeout(debounceTimer);
         const password = e.target.value;
@@ -144,7 +214,7 @@ function initPasswordAnalyzer() {
             updatePasswordUI({
                 strength: "Enter Password",
                 score: 0,
-                suggestions: ["Type a password to start evaluation..."]
+                suggestions: []
             });
             validateLockForm();
             return;
@@ -167,44 +237,28 @@ function initPasswordAnalyzer() {
 }
 
 function updatePasswordUI(data) {
-    const fill = document.getElementById('pwd-meter-fill');
-    const label = document.getElementById('pwd-strength-label');
-    const pct = document.getElementById('pwd-pct-label');
-    const suggestions = document.getElementById('pwd-suggestions');
+    const fill = document.getElementById('strength-bar-fill');
+    const label = document.getElementById('strength-label');
+    const badge = document.getElementById('classification-badge');
 
-    // Update progress meter bar width & text percentage
+    if (!fill || !label || !badge) return;
+
     fill.style.width = `${data.score}%`;
-    pct.innerText = `${data.score}%`;
-    label.innerText = data.strength;
+    label.innerText = `Password Strength: ${data.strength} (${data.score}%)`;
+    badge.innerText = data.strength;
 
-    // Reset meter classes and set current strength class
-    fill.className = "meter-fill";
-    label.className = "strength-val";
+    fill.className = "strength-bar-fill";
+    badge.className = "classification-badge";
     
     if (data.strength === "Weak") {
         fill.classList.add('weak');
-        label.classList.add('text-red');
+        badge.classList.add('weak');
     } else if (data.strength === "Medium") {
         fill.classList.add('medium');
-        label.classList.add('text-orange');
+        badge.classList.add('medium');
     } else {
         fill.classList.add('strong');
-        label.classList.add('text-green');
-    }
-
-    // List Recommendations
-    suggestions.innerHTML = "";
-    if (data.suggestions.length === 0) {
-        const li = document.createElement('li');
-        li.innerText = "Password is highly secure and meets all criteria!";
-        li.style.color = "var(--neon-green)";
-        suggestions.appendChild(li);
-    } else {
-        data.suggestions.forEach(tip => {
-            const li = document.createElement('li');
-            li.innerText = tip;
-            suggestions.appendChild(li);
-        });
+        badge.classList.add('strong');
     }
 }
 
@@ -213,6 +267,7 @@ function updatePasswordUI(data) {
 // ==========================================
 function initLocker() {
     const lockSubmitBtn = document.getElementById('btn-lock-submit');
+    if (!lockSubmitBtn) return;
     
     lockSubmitBtn.addEventListener('click', () => {
         const path = document.getElementById('target-path').value;
@@ -222,7 +277,7 @@ function initLocker() {
         if (!path || !password) return;
 
         lockSubmitBtn.disabled = true;
-        lockSubmitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Locking items...`;
+        lockSubmitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Securing Vault...`;
 
         fetch('/api/lock', {
             method: 'POST',
@@ -232,20 +287,27 @@ function initLocker() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
-                resetLockForm();
-                switchTab('vault');
+                // Transition to success state card
+                const parts = path.split(/[\\/]/);
+                document.getElementById('success-item-name').innerText = parts[parts.length - 1] || path;
+                
+                document.getElementById('drop-zone-ready').classList.add('hidden');
+                document.getElementById('drop-zone-form').classList.add('hidden');
+                document.getElementById('drop-zone-success').classList.remove('hidden');
+                
+                loadVault();
+                loadLogs();
             } else {
                 alert("Error: " + data.message);
                 lockSubmitBtn.disabled = false;
-                lockSubmitBtn.innerHTML = `<i class="fa-solid fa-lock"></i> Secure & Lock Item`;
+                lockSubmitBtn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Secure & Lock`;
             }
         })
         .catch(err => {
             console.error("Locking failed:", err);
             alert("Error connecting to server.");
             lockSubmitBtn.disabled = false;
-            lockSubmitBtn.innerHTML = `<i class="fa-solid fa-lock"></i> Secure & Lock Item`;
+            lockSubmitBtn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Secure & Lock`;
         });
     });
 }
@@ -255,6 +317,8 @@ function validateLockForm() {
     const password = document.getElementById('lock-password').value;
     const submitBtn = document.getElementById('btn-lock-submit');
 
+    if (!submitBtn) return;
+
     if (path && password.length >= 4) {
         submitBtn.disabled = false;
     } else {
@@ -263,14 +327,25 @@ function validateLockForm() {
 }
 
 function resetLockForm() {
+    const readyState = document.getElementById('drop-zone-ready');
+    const formState = document.getElementById('drop-zone-form');
+    const successState = document.getElementById('drop-zone-success');
+    
     document.getElementById('target-path').value = "";
     document.getElementById('lock-password').value = "";
+    if (document.getElementById('lock-decoy-password')) {
+        document.getElementById('lock-decoy-password').value = "";
+    }
     document.getElementById('delete-original').checked = true;
-    document.getElementById('btn-lock-submit').disabled = true;
+    
+    readyState.classList.remove('hidden');
+    formState.classList.add('hidden');
+    successState.classList.add('hidden');
+    
     updatePasswordUI({
         strength: "Enter Password",
         score: 0,
-        suggestions: ["Type a password to start evaluation..."]
+        suggestions: []
     });
 }
 
@@ -944,24 +1019,29 @@ function initAuth() {
         lockScreen.classList.remove('active');
         
         // Show global elements
-        document.getElementById('global-auth-badge').classList.remove('hidden');
-        document.getElementById('btn-logout').classList.remove('hidden');
+        const view = document.getElementById('jumpshare-dashboard-view');
+        if (view) view.classList.remove('hidden');
+        const headerControls = document.getElementById('dashboard-header-controls');
+        if (headerControls) headerControls.classList.remove('hidden');
         
         // Configure auth level visual
         const authBadge = document.getElementById('global-auth-badge');
         const authSpan = authBadge.querySelector('span');
         const authIcon = authBadge.querySelector('i');
-        const lockTab = document.querySelector('.nav-item[data-tab="lock"]');
         
         authBadge.className = "auth-badge " + data.auth_level;
         if (data.auth_level === 'decoy') {
             authSpan.innerText = "Decoy Mode";
             authIcon.className = "fa-solid fa-mask";
-            if (lockTab) lockTab.classList.add('hidden'); // Hide lock menu in Decoy mode
+            document.getElementById('btn-browse-folder').classList.add('hidden');
+            document.getElementById('btn-browse-file').classList.add('hidden');
+            document.getElementById('drop-zone-ready').querySelector('.drop-zone-text').innerText = "Vault is in Read-Only Decoy mode.";
         } else {
             authSpan.innerText = "Master Mode";
             authIcon.className = "fa-solid fa-user-gear";
-            if (lockTab) lockTab.classList.remove('hidden');
+            document.getElementById('btn-browse-folder').classList.remove('hidden');
+            document.getElementById('btn-browse-file').classList.remove('hidden');
+            document.getElementById('drop-zone-ready').querySelector('.drop-zone-text').innerText = "or, drop items here";
         }
         
         // Clean fields
@@ -1047,19 +1127,18 @@ function initAuth() {
                     lockScreen.classList.add('active');
                     showCard(emailCard);
                     
-                    // Hide header elements
-                    document.getElementById('global-auth-badge').classList.add('hidden');
-                    btnLogout.classList.add('hidden');
+                    // Hide dashboard elements
+                    const view = document.getElementById('jumpshare-dashboard-view');
+                    if (view) view.classList.add('hidden');
+                    const headerControls = document.getElementById('dashboard-header-controls');
+                    if (headerControls) headerControls.classList.add('hidden');
                     
                     // Clear displays
                     document.getElementById('vault-items-body').innerHTML = "";
                     document.getElementById('log-entries-body').innerHTML = "";
                     
-                    // Clear lock tab if hidden
-                    const lockTab = document.querySelector('.nav-item[data-tab="lock"]');
-                    if (lockTab) lockTab.classList.remove('hidden');
-                    
-                    switchTab('vault');
+                    // Reset lock form
+                    resetLockForm();
                 }
             })
             .catch(err => console.error("Logout error:", err));
@@ -1089,23 +1168,26 @@ window.handleOauthLoginSuccess = function(data) {
     if (lockScreen) lockScreen.classList.remove('active');
     
     // Show navigation controls
-    document.getElementById('global-auth-badge').classList.remove('hidden');
-    document.getElementById('btn-logout').classList.remove('hidden');
+    const view = document.getElementById('jumpshare-dashboard-view');
+    if (view) view.classList.remove('hidden');
+    const headerControls = document.getElementById('dashboard-header-controls');
+    if (headerControls) headerControls.classList.remove('hidden');
     
     // Configure visual mode
     const authBadge = document.getElementById('global-auth-badge');
     const authSpan = authBadge.querySelector('span');
     const authIcon = authBadge.querySelector('i');
-    const lockTab = document.querySelector('.nav-item[data-tab="lock"]');
     
     authBadge.className = "auth-badge master";
     authSpan.innerText = "Master Mode";
     authIcon.className = "fa-solid fa-user-gear";
-    if (lockTab) lockTab.classList.remove('hidden');
+    document.getElementById('btn-browse-folder').classList.remove('hidden');
+    document.getElementById('btn-browse-file').classList.remove('hidden');
+    document.getElementById('drop-zone-ready').querySelector('.drop-zone-text').innerText = "or, drop items here";
     
     // Clear forms
-    document.getElementById('login-password').value = "";
-    document.getElementById('login-email').value = "";
+    document.getElementById('auth-password').value = "";
+    document.getElementById('auth-email').value = "";
     
     // Refresh content feeds
     loadVault();

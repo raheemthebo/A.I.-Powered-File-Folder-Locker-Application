@@ -278,6 +278,12 @@ def setup_vault():
     session.pop('otp_email', None)
 
     save_vault_config(config)
+    
+    # Auto-login the user upon successful setup
+    session['email'] = email
+    session['auth_level'] = 'master'
+    session['logged_in'] = True
+
     log_security_event("SETUP", f"User account created for {email}.")
     return jsonify({"success": True, "message": "Account created successfully!"})
 
